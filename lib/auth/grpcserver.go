@@ -174,7 +174,7 @@ func (g *GRPCServer) CreateAuditStream(stream proto.AuthService_CreateAuditStrea
 			if err != nil {
 				return trail.ToGRPC(err)
 			}
-			h, err := auth.GetClusterName()
+			clusterName, err := auth.GetClusterName()
 			if err != nil {
 				return trail.ToGRPC(err)
 			}
@@ -185,7 +185,7 @@ func (g *GRPCServer) CreateAuditStream(stream proto.AuthService_CreateAuditStrea
 						Type:        events.SessionUploadEvent,
 						Code:        events.SessionUploadCode,
 						Index:       events.SessionUploadIndex,
-						ClusterName: h.GetClusterName(),
+						ClusterName: clusterName.GetClusterName(),
 					},
 					SessionMetadata: events.SessionMetadata{
 						SessionID: string(sessionData.SessionID),
