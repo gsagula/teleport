@@ -21,6 +21,7 @@ import (
 	"io"
 	"net"
 	"strings"
+	"sync/atomic"
 
 	"github.com/gravitational/teleport/lib/srv/db/common"
 
@@ -64,7 +65,11 @@ type TestServer struct {
 
 // NewTestServer returns a new instance of a test MySQL server.
 func NewTestServer(config common.TestServerConfig) (*TestServer, error) {
-	listener, err := net.Listen("tcp", "localhost:0")
+	address := "localhost:0"
+	if config.Address != "" {
+		address = config.Address
+	}
+	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		return nil, trace.Wrap(err)
 	}
@@ -147,7 +152,7 @@ func (s *TestServer) Port() string {
 
 // QueryCount returns the number of queries the server has received.
 func (s *TestServer) QueryCount() uint32 {
-	return s.handler.queryCount
+	return atomic.LoadUint32(&s.handler.queryCount)
 }
 
 // Close closes the server listener.
@@ -164,12 +169,12 @@ type testHandler struct {
 
 func (h *testHandler) HandleQuery(query string) (*mysql.Result, error) {
 	h.log.Debugf("Received query %q.", query)
-	h.queryCount++
+	atomic.AddUint32(&h.queryCount, 1)
 	return TestQueryResponse, nil
 }
 
 // TestQueryResponse is what test MySQL server returns to every query.
 var TestQueryResponse = &mysql.Result{
-	InsertId:     0,
+	InsertId:     1,
 	AffectedRows: 0,
 }

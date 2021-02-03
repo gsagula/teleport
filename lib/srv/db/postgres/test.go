@@ -72,7 +72,11 @@ type TestServer struct {
 
 // NewTestServer returns a new instance of a test Postgres server.
 func NewTestServer(config common.TestServerConfig) (*TestServer, error) {
-	listener, err := net.Listen("tcp", "localhost:0")
+	address := "localhost:0"
+	if config.Address != "" {
+		address = config.Address
+	}
+	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		return nil, trace.Wrap(err)
 	}
@@ -216,7 +220,7 @@ func (s *TestServer) Port() string {
 
 // QueryCount returns the number of queries the server has received.
 func (s *TestServer) QueryCount() uint32 {
-	return s.queryCount
+	return atomic.LoadUint32(&s.queryCount)
 }
 
 // Close closes the server listener.

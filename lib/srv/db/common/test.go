@@ -39,6 +39,8 @@ type TestServerConfig struct {
 	AuthClient auth.ClientI
 	// Name is the server name for identification purposes.
 	Name string
+	// Address is an optional server listen address.
+	Address string
 }
 
 // MakeTestServerTLSConfig returns TLS config suitable for configuring test
