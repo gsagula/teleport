@@ -22,6 +22,8 @@ limitations under the License.
 #include <string.h>
 #include <utmp.h>
 
+// todo use _r variants of get functions
+
 static int max_len_tty_name() {
     return UT_LINESIZE;
 }
@@ -47,6 +49,22 @@ static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_ad
     entry.ut_tv.tv_usec = timestamp.tv_usec;
     memcpy(&entry.ut_addr_v6, &remote_addr_v6, sizeof(int32_t) * 4);
 
+    setutent();
+    if (pututline(&entry) == NULL) {
+        return 1;
+    }
+    endutent();
+    updwtmp(_PATH_WTMP, &entry);
+    return 0;
+}
+
+static int uacc_mark_utmp_entry_dead(char *tty_name) {
+    setutent();
+    struct utmp line;
+    strcpy((char*) &line.ut_line, tty_name);
+    struct utmp entry;
+    memcpy((void*) &entry, (void*) getutline(&line), sizeof(struct utmp));
+    entry.ut_type = DEAD_PROCESS;
     setutent();
     if (pututline(&entry) == NULL) {
         return 1;

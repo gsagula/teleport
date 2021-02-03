@@ -65,3 +65,22 @@ func addUtmpEntry(username string, hostname string, remoteAddrV6 [4]int, ttyName
 
 	return nil
 }
+
+func markUtmpEntryDead(ttyName string) error {
+	if len(ttyName) > (int)(C.max_len_tty_name()-1) {
+		return errors.New("tty name length exceeds OS limits")
+	}
+
+	var CTtyName = C.CString(ttyName)
+	defer C.free(unsafe.Pointer(CTtyName))
+
+	accountDb.Lock()
+	var status = C.uacc_mark_utmp_entry_dead(CTtyName)
+	accountDb.Unlock()
+
+	if status != 0 {
+		return errors.New("failed to modify utmp entry in database")
+	}
+
+	return nil
+}
