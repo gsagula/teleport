@@ -22,10 +22,13 @@ limitations under the License.
 #include <string.h>
 #include <utmp.h>
 
+// The max byte length of the C string representing the TTY name.
 static int max_len_tty_name() {
     return UT_LINESIZE;
 }
 
+// Low level C function to add a new USER_PROCESS entry to the database.
+// This function does not perform any argument validation.
 static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_addr_v6[4], char *tty_name, char* inittabId) {
     struct utmp entry;
     entry.ut_type = USER_PROCESS;
@@ -35,18 +38,14 @@ static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_ad
     strcpy((char*) &entry.ut_host, hostname);
     strcpy((char*) &entry.ut_user, username);
     entry.ut_session = 0;
-
     struct timeval timestamp;
     int failed = gettimeofday(&timestamp, NULL);
-
     if (failed != 0) {
         return 1;
     }
-
     entry.ut_tv.tv_sec = timestamp.tv_sec;
     entry.ut_tv.tv_usec = timestamp.tv_usec;
     memcpy(&entry.ut_addr_v6, &remote_addr_v6, sizeof(int32_t) * 4);
-
     setutent();
     if (pututline(&entry) == NULL) {
         return 1;
@@ -56,6 +55,8 @@ static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_ad
     return 0;
 }
 
+// Low level C function to mark a database entry as DEAD_PROCESS.
+// This function does not perform string argument validation.
 static int uacc_mark_utmp_entry_dead(char *tty_name) {
     setutent();
     struct utmp line;
