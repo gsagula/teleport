@@ -17,10 +17,14 @@ limitations under the License.
 package srv
 
 import (
+	"net"
+	"os"
+
 	"golang.org/x/crypto/ssh"
 
 	rsession "github.com/gravitational/teleport/lib/session"
 	"github.com/gravitational/teleport/lib/sshutils"
+	"github.com/gravitational/teleport/lib/utils"
 	"github.com/gravitational/trace"
 )
 
@@ -92,6 +96,22 @@ func (t *TermHandlers) HandlePTYReq(ch ssh.Channel, req *ssh.Request, ctx *Serve
 	// update the session
 	if err := t.SessionRegistry.NotifyWinChange(*params, ctx); err != nil {
 		ctx.Errorf("Unable to update session: %v", err)
+	}
+
+	remoteStringIP, _, _ := net.SplitHostPort(ctx.ConnectionContext.ServerConn.RemoteAddr().String())
+	remoteIP := net.ParseIP(remoteStringIP)
+	hostname, err := os.Hostname()
+	if err != nil {
+		// todo
+	}
+	tty := term.TTY()
+	ttyName, err := utils.TtyName(tty)
+	if err != nil {
+		// todo
+	}
+	err = utils.AddUtmpEntry(ctx.Identity.Login, hostname, remoteIP, *ttyName, "")
+	if err != nil {
+		// todo
 	}
 
 	return nil

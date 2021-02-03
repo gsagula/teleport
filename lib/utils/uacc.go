@@ -21,7 +21,9 @@ package utils
 import "C"
 
 import (
+	"encoding/binary"
 	"errors"
+	"net"
 	"sync"
 	"unsafe"
 )
@@ -43,7 +45,13 @@ var nameMaxLen = 255
 // `remoteAddrV6`: IPv6 address of the remote host.
 // `ttyName`: Name of the TTY without the `/dev/` prefix.
 // `inittabID`: The ID of the inittab entry.
-func AddUtmpEntry(username string, hostname string, remoteAddrV6 [4]int32, ttyName string, inittabID string) error {
+func AddUtmpEntry(username string, hostname string, remote net.IP, ttyName string, inittabID string) error {
+	rawV6 := remote.To16()
+	groupedV6 := [4]int32{}
+	for i := range groupedV6 {
+		groupedV6[i] = int32(binary.LittleEndian.Uint32(rawV6[i*4 : (i+1)*4]))
+	}
+
 	// String parameter validation.
 	if len(username) > nameMaxLen {
 		return errors.New("username length exceeds OS limits")
@@ -68,7 +76,7 @@ func AddUtmpEntry(username string, hostname string, remoteAddrV6 [4]int32, ttyNa
 	// Convert IPv6 array into C integer format.
 	var CInts = [4]C.int{}
 	for i := 0; i < 4; i++ {
-		CInts[i] = (C.int)(remoteAddrV6[i])
+		CInts[i] = (C.int)(groupedV6[i])
 	}
 
 	accountDb.Lock()
