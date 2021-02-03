@@ -22,8 +22,6 @@ limitations under the License.
 #include <string.h>
 #include <utmp.h>
 
-// todo use _r variants of get functions
-
 static int max_len_tty_name() {
     return UT_LINESIZE;
 }
@@ -63,7 +61,11 @@ static int uacc_mark_utmp_entry_dead(char *tty_name) {
     struct utmp line;
     strcpy((char*) &line.ut_line, tty_name);
     struct utmp entry;
-    memcpy((void*) &entry, (void*) getutline(&line), sizeof(struct utmp));
+    struct utmp *bptr = &entry;
+    int status = getutline_r(&line, &entry, &bptr);
+    if (status != 0) {
+        return 1;
+    }
     entry.ut_type = DEAD_PROCESS;
     setutent();
     if (pututline(&entry) == NULL) {
