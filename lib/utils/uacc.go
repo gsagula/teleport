@@ -35,7 +35,7 @@ var inittabMaxLen = 3
 // Max length of username and hostname as defined by glibc.
 var nameMaxLen = 255
 
-// Writes a new entry to the utmp database with a tag of `USER_PROCESS`.
+// AddUtmpEntry writes a new entry to the utmp database with a tag of `USER_PROCESS`.
 // This should be called when an interactive session is started.
 //
 // `username`: Name of the user the interactive session is running under.
@@ -43,7 +43,7 @@ var nameMaxLen = 255
 // `remoteAddrV6`: IPv6 address of the remote host.
 // `ttyName`: Name of the TTY without the `/dev/` prefix.
 // `inittabID`: The ID of the inittab entry.
-func addUtmpEntry(username string, hostname string, remoteAddrV6 [4]int, ttyName string, inittabID string) error {
+func AddUtmpEntry(username string, hostname string, remoteAddrV6 [4]int32, ttyName string, inittabID string) error {
 	// String parameter validation.
 	if len(username) > nameMaxLen {
 		return errors.New("username length exceeds OS limits")
@@ -82,11 +82,11 @@ func addUtmpEntry(username string, hostname string, remoteAddrV6 [4]int, ttyName
 	return nil
 }
 
-// This function marks an entry in the utmp database as DEAD_PROCESS.
+// MarkUtmpEntryDead marks an entry in the utmp database as DEAD_PROCESS.
 // This should be called when an interactive session exits.
 //
 // The `ttyName` parameter must be the name of the TTY without the `/dev/` prefix.
-func markUtmpEntryDead(ttyName string) error {
+func MarkUtmpEntryDead(ttyName string) error {
 	// String parameter validation.
 	if len(ttyName) > (int)(C.max_len_tty_name()-1) {
 		return errors.New("tty name length exceeds OS limits")

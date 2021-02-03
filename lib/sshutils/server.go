@@ -22,9 +22,11 @@ import (
 	"bytes"
 	"context"
 	"crypto/subtle"
+	"encoding/binary"
 	"encoding/json"
 	"io"
 	"net"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -442,6 +444,25 @@ func (s *Server) HandleConnection(conn net.Conn) {
 	// Connection successfully initiated
 	s.log.Debugf("Incoming connection %v -> %v vesion: %v.",
 		sconn.RemoteAddr(), sconn.LocalAddr(), string(sconn.ClientVersion()))
+
+	// -- utmp setup
+	rAddr := sconn.RemoteAddr()
+	stringIP, _, _ := net.SplitHostPort(rAddr.String())
+	ip := net.ParseIP(stringIP)
+	rawV6 := ip.To16()
+	groupedV6 := [4]int32{}
+	for i := range groupedV6 {
+		groupedV6[i] = int32(binary.LittleEndian.Uint32(rawV6[i*4 : (i+1)*4]))
+	}
+	hostname, err := os.Hostname()
+	if err != nil {
+		// todo
+	}
+	err = utils.AddUtmpEntry(user, hostname, groupedV6, "", "")
+	if err != nil {
+		// todo
+	}
+	// --
 
 	// will be called when the connection is closed
 	connClosed := func() {
