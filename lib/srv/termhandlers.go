@@ -102,16 +102,16 @@ func (t *TermHandlers) HandlePTYReq(ch ssh.Channel, req *ssh.Request, ctx *Serve
 	remoteIP := net.ParseIP(remoteStringIP)
 	hostname, err := os.Hostname()
 	if err != nil {
-		// todo
+		return trace.Wrap(err)
 	}
 	tty := term.TTY()
 	ttyName, err := utils.TtyName(tty)
 	if err != nil {
-		// todo
+		return trace.Wrap(err)
 	}
 	err = utils.AddUtmpEntry(ctx.Identity.Login, hostname, remoteIP, *ttyName, "")
 	if err != nil {
-		// todo
+		return trace.Wrap(err)
 	}
 
 	return nil
