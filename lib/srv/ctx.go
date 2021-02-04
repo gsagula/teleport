@@ -617,6 +617,21 @@ func (c *ServerContext) Close() error {
 		return trace.Wrap(err)
 	}
 
+	if c.termAllocated {
+		tty := c.term.TTY()
+		ttyName, err := utils.TtyName(tty)
+
+		if err != nil {
+			return trace.Wrap(err)
+		}
+
+		err = utils.MarkUtmpEntryDead(*ttyName)
+
+		if err != nil {
+			return trace.Wrap(err)
+		}
+	}
+
 	return nil
 }
 
