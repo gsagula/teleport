@@ -28,6 +28,9 @@ import (
 	"unsafe"
 )
 
+// This module concerns itself with updating the user account database and log on nodes
+// that a client connects to with an interactive session.
+
 // Due to thread safety design in glibc we must serialize all access to the accounting database.
 var accountDb sync.Mutex
 
@@ -37,7 +40,7 @@ var inittabMaxLen = 3
 // Max length of username and hostname as defined by glibc.
 var nameMaxLen = 255
 
-// AddUtmpEntry writes a new entry to the utmp database with a tag of `USER_PROCESS`.
+// InteractiveSessionOpened writes a new entry to the utmp database with a tag of `USER_PROCESS`.
 // This should be called when an interactive session is started.
 //
 // `username`: Name of the user the interactive session is running under.
@@ -45,7 +48,7 @@ var nameMaxLen = 255
 // `remoteAddrV6`: IPv6 address of the remote host.
 // `ttyName`: Name of the TTY without the `/dev/` prefix.
 // `inittabID`: The ID of the inittab entry.
-func AddUtmpEntry(username string, hostname string, remote net.IP, ttyName string, inittabID string) error {
+func InteractiveSessionOpened(username string, hostname string, remote net.IP, ttyName string, inittabID string) error {
 	rawV6 := remote.To16()
 	groupedV6 := [4]int32{}
 	for i := range groupedV6 {
@@ -90,11 +93,11 @@ func AddUtmpEntry(username string, hostname string, remote net.IP, ttyName strin
 	return nil
 }
 
-// MarkUtmpEntryDead marks an entry in the utmp database as DEAD_PROCESS.
+// InteractiveSessionClosed marks an entry in the utmp database as DEAD_PROCESS.
 // This should be called when an interactive session exits.
 //
 // The `ttyName` parameter must be the name of the TTY without the `/dev/` prefix.
-func MarkUtmpEntryDead(ttyName string) error {
+func InteractiveSessionClosed(ttyName string) error {
 	// String parameter validation.
 	if len(ttyName) > (int)(C.max_len_tty_name()-1) {
 		return errors.New("tty name length exceeds OS limits")

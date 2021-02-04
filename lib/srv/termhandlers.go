@@ -98,6 +98,7 @@ func (t *TermHandlers) HandlePTYReq(ch ssh.Channel, req *ssh.Request, ctx *Serve
 		ctx.Errorf("Unable to update session: %v", err)
 	}
 
+	// update the user accounting database about the new tty
 	remoteStringIP, _, _ := net.SplitHostPort(ctx.ConnectionContext.ServerConn.RemoteAddr().String())
 	remoteIP := net.ParseIP(remoteStringIP)
 	hostname, err := os.Hostname()
@@ -109,7 +110,7 @@ func (t *TermHandlers) HandlePTYReq(ch ssh.Channel, req *ssh.Request, ctx *Serve
 	if err != nil {
 		return trace.Wrap(err)
 	}
-	err = utils.AddUtmpEntry(ctx.Identity.Login, hostname, remoteIP, *ttyName, "")
+	err = utils.InteractiveSessionOpened(ctx.Identity.Login, hostname, remoteIP, *ttyName, "")
 	if err != nil {
 		return trace.Wrap(err)
 	}

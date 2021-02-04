@@ -617,6 +617,8 @@ func (c *ServerContext) Close() error {
 		return trace.Wrap(err)
 	}
 
+	// if there was a tty allocated, update the user accounting database
+	// with information that it's now closed
 	if c.termAllocated {
 		tty := c.term.TTY()
 		ttyName, err := utils.TtyName(tty)
@@ -625,7 +627,7 @@ func (c *ServerContext) Close() error {
 			return trace.Wrap(err)
 		}
 
-		err = utils.MarkUtmpEntryDead(*ttyName)
+		err = utils.InteractiveSessionClosed(*ttyName)
 
 		if err != nil {
 			return trace.Wrap(err)
