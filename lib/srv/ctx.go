@@ -252,6 +252,10 @@ type ServerContext struct {
 	// session. Terminals can be allocated for both "exec" or "session" requests.
 	termAllocated bool
 
+	// termTTY is used to store the file descriptor of the allocated TTY if one has
+	// been allocated, otherwise this is nil.
+	termTTY *os.File
+
 	// request is the request that was issued by the client
 	request *ssh.Request
 
@@ -476,6 +480,12 @@ func (c *ServerContext) SetTerm(t Terminal) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if t != nil {
+		c.termTTY = t.TTY()
+	} else {
+		c.termTTY = nil
+	}
+
 	c.term = t
 }
 
@@ -619,9 +629,8 @@ func (c *ServerContext) Close() error {
 
 	// if there was a tty allocated, update the user accounting database
 	// with information that it's now closed
-	if c.termAllocated {
-		tty := c.term.TTY()
-		ttyName, err := utils.TtyName(tty)
+	if c.termTTY != nil {
+		ttyName, err := utils.TtyName(c.termTTY)
 
 		if err != nil {
 			return trace.Wrap(err)
