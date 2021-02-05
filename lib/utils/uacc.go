@@ -34,9 +34,6 @@ import (
 // Due to thread safety design in glibc we must serialize all access to the accounting database.
 var accountDb sync.Mutex
 
-// Max length of the inittab ID as defined by glibc.
-var inittabMaxLen = 3
-
 // Max length of username and hostname as defined by glibc.
 var nameMaxLen = 255
 
@@ -47,7 +44,6 @@ var nameMaxLen = 255
 // `hostname`: Name of the system the user is logged into.
 // `remoteAddrV6`: IPv6 address of the remote host.
 // `ttyName`: Name of the TTY without the `/dev/` prefix.
-// `inittabID`: The ID of the inittab entry.
 func InteractiveSessionOpened(username string, hostname string, remote net.IP, ttyName string) error {
 	rawV6 := remote.To16()
 	groupedV6 := [4]int32{}
@@ -79,7 +75,7 @@ func InteractiveSessionOpened(username string, hostname string, remote net.IP, t
 	}
 
 	accountDb.Lock()
-	var status = C.uacc_add_utmp_entry(CUsername, CHostname, (*C.int)(&CInts[0]), CTtyName)
+	var status = C.uacc_add_utmp_entry(CUsername, CHostname, &CInts[0], CTtyName)
 	accountDb.Unlock()
 
 	if status == C.UACC_GET_TIME_ERROR {
