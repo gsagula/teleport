@@ -23,6 +23,11 @@ limitations under the License.
 #include <utmp.h>
 #include <errno.h>
 
+int UACC_GET_TIME_ERROR = 1;
+int UACC_UTMP_MISSING_PERMISSIONS = 2;
+int UACC_UTMP_WRITE_ERROR = 3;
+int UACC_UTMP_READ_ERROR = 4;
+
 // The max byte length of the C string representing the TTY name.
 static int max_len_tty_name() {
     return UT_LINESIZE;
@@ -43,14 +48,14 @@ static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_ad
     struct timeval timestamp;
     int failed = gettimeofday(&timestamp, NULL);
     if (failed != 0) {
-        return 1;
+        return UACC_GET_TIME_ERROR;
     }
     entry.ut_tv.tv_sec = timestamp.tv_sec;
     entry.ut_tv.tv_usec = timestamp.tv_usec;
     memcpy(&entry.ut_addr_v6, &remote_addr_v6, sizeof(int32_t) * 4);
     setutent();
     if (pututline(&entry) == NULL) {
-        return errno == EPERM ? 2 : 1;
+        return errno == EPERM ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }
     endutent();
     updwtmp(_PATH_WTMP, &entry);
@@ -68,12 +73,12 @@ static int uacc_mark_utmp_entry_dead(char *tty_name) {
     struct utmp *bptr = &entry;
     int status = getutline_r(&line, &entry, &bptr);
     if (status != 0) {
-        return 1;
+        return UACC_UTMP_READ_ERROR;
     }
     entry.ut_type = DEAD_PROCESS;
     setutent();
     if (pututline(&entry) == NULL) {
-        return errno == EPERM ? 2 : 1;
+        return errno == EPERM ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }
     endutent();
     updwtmp(_PATH_WTMP, &entry);

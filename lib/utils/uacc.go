@@ -86,9 +86,11 @@ func InteractiveSessionOpened(username string, hostname string, remote net.IP, t
 	var status = C.uacc_add_utmp_entry(CUsername, CHostname, (*C.int)(&CInts[0]), CTtyName, CInittabID)
 	accountDb.Unlock()
 
-	if status == 2 {
+	if status == C.UACC_GET_TIME_ERROR {
+		return errors.New("gettimeofday failed")
+	} else if status == C.UACC_UTMP_MISSING_PERMISSIONS {
 		return errors.New("missing permissions to write to utmp/wtmp")
-	} else if status != 0 {
+	} else if status == C.UACC_UTMP_WRITE_ERROR {
 		return errors.New("failed to add entry to utmp database")
 	}
 
@@ -113,10 +115,14 @@ func InteractiveSessionClosed(ttyName string) error {
 	var status = C.uacc_mark_utmp_entry_dead(CTtyName)
 	accountDb.Unlock()
 
-	if status == 2 {
+	if status == C.UACC_GET_TIME_ERROR {
+		return errors.New("gettimeofday failed")
+	} else if status == C.UACC_UTMP_MISSING_PERMISSIONS {
 		return errors.New("missing permissions to write to utmp/wtmp")
-	} else if status != 0 {
+	} else if status == C.UACC_UTMP_WRITE_ERROR {
 		return errors.New("failed to add entry to utmp database")
+	} else if status == C.UACC_UTMP_READ_ERROR {
+		return errors.New("failed to read and search utmp database")
 	}
 
 	return nil
