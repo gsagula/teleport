@@ -49,7 +49,7 @@ static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_ad
     memcpy(&entry.ut_addr_v6, &remote_addr_v6, sizeof(int32_t) * 4);
     setutent();
     if (pututline(&entry) == NULL) {
-        return 1;
+        return 2;
     }
     endutent();
     updwtmp(_PATH_WTMP, &entry);
@@ -72,7 +72,7 @@ static int uacc_mark_utmp_entry_dead(char *tty_name) {
     entry.ut_type = DEAD_PROCESS;
     setutent();
     if (pututline(&entry) == NULL) {
-        return 1;
+        return 2;
     }
     endutent();
     updwtmp(_PATH_WTMP, &entry);
