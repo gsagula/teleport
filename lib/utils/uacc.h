@@ -67,12 +67,12 @@ static int uacc_mark_utmp_entry_dead(char *tty_name) {
     setutent();
     struct utmp line;
     strcpy((char*) &line.ut_line, tty_name);
-    struct utmp entry;
-    struct utmp *bptr = &entry;
-    int status = getutline_r(&line, &entry, &bptr);
-    if (status != 0) {
+    struct utmp *entry_t = getutline(&line);
+    if (entry_t == NULL) {
         return UACC_UTMP_READ_ERROR;
     }
+    struct utmp entry;
+    memcpy(&entry, entry_t, sizeof(struct utmp));
     entry.ut_type = DEAD_PROCESS;
     setutent();
     if (pututline(&entry) == NULL) {
