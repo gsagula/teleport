@@ -21,6 +21,7 @@ limitations under the License.
 #include <stdint.h>
 #include <string.h>
 #include <utmp.h>
+#include <errno.h>
 
 // The max byte length of the C string representing the TTY name.
 static int max_len_tty_name() {
@@ -49,7 +50,11 @@ static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_ad
     memcpy(&entry.ut_addr_v6, &remote_addr_v6, sizeof(int32_t) * 4);
     setutent();
     if (pututline(&entry) == NULL) {
-        return 2;
+        if (errno == EPERM) {
+            return 2;
+        } else {
+            return 1;
+        }
     }
     endutent();
     updwtmp(_PATH_WTMP, &entry);
@@ -72,7 +77,11 @@ static int uacc_mark_utmp_entry_dead(char *tty_name) {
     entry.ut_type = DEAD_PROCESS;
     setutent();
     if (pututline(&entry) == NULL) {
-        return 2;
+        if (errno == EPERM) {
+            return 2;
+        } else {
+            return 1;
+        }
     }
     endutent();
     updwtmp(_PATH_WTMP, &entry);
