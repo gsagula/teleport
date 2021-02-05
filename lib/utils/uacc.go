@@ -22,10 +22,11 @@ import "C"
 
 import (
 	"encoding/binary"
-	"errors"
 	"net"
 	"sync"
 	"unsafe"
+
+	"github.com/gravitational/trace"
 )
 
 // This module concerns itself with updating the user account database and log on nodes
@@ -53,11 +54,11 @@ func InteractiveSessionOpened(username, hostname string, remote net.IP, ttyName 
 
 	// String parameter validation.
 	if len(username) > nameMaxLen {
-		return errors.New(("username length exceeds OS limits"))
+		return trace.BadParameter("username length exceeds OS limits")
 	} else if len(hostname) > nameMaxLen {
-		return errors.New(("hostname length exceeds OS limits"))
+		return trace.BadParameter("hostname length exceeds OS limits")
 	} else if len(ttyName) > (int)(C.max_len_tty_name()-1) {
-		return errors.New(("tty name length exceeds OS limits"))
+		return trace.BadParameter("tty name length exceeds OS limits")
 	}
 
 	// Convert Go strings into C strings that we can pass over ffi.
@@ -79,11 +80,11 @@ func InteractiveSessionOpened(username, hostname string, remote net.IP, ttyName 
 	accountDb.Unlock()
 
 	if status == C.UACC_GET_TIME_ERROR {
-		return errors.New("InteractiveSessionOpened gettimeofday failed")
+		return trace.Errorf("InteractiveSessionOpened gettimeofday failed")
 	} else if status == C.UACC_UTMP_MISSING_PERMISSIONS {
-		return errors.New("InteractiveSessionOpened missing permissions to write to utmp/wtmp")
+		return trace.Errorf("InteractiveSessionOpened missing permissions to write to utmp/wtmp")
 	} else if status == C.UACC_UTMP_WRITE_ERROR {
-		return errors.New("InteractiveSessionOpened failed to add entry to utmp database")
+		return trace.Errorf("InteractiveSessionOpened failed to add entry to utmp database")
 	}
 
 	return nil
@@ -96,7 +97,7 @@ func InteractiveSessionOpened(username, hostname string, remote net.IP, ttyName 
 func InteractiveSessionClosed(ttyName string) error {
 	// String parameter validation.
 	if len(ttyName) > (int)(C.max_len_tty_name()-1) {
-		return errors.New("tty name length exceeds OS limits")
+		return trace.BadParameter("tty name length exceeds OS limits")
 	}
 
 	// Convert Go strings into C strings that we can pass over ffi.
@@ -108,13 +109,13 @@ func InteractiveSessionClosed(ttyName string) error {
 	accountDb.Unlock()
 
 	if status == C.UACC_GET_TIME_ERROR {
-		return errors.New("InteractiveSessionClosed gettimeofday failed")
+		return trace.Errorf("InteractiveSessionClosed gettimeofday failed")
 	} else if status == C.UACC_UTMP_MISSING_PERMISSIONS {
-		return errors.New("InteractiveSessionClosed missing permissions to write to utmp/wtmp")
+		return trace.Errorf("InteractiveSessionClosed missing permissions to write to utmp/wtmp")
 	} else if status == C.UACC_UTMP_WRITE_ERROR {
-		return errors.New("InteractiveSessionClosed failed to add entry to utmp database")
+		return trace.Errorf("InteractiveSessionClosed failed to add entry to utmp database")
 	} else if status == C.UACC_UTMP_READ_ERROR {
-		return errors.New("InteractiveSessionClosed failed to read and search utmp database")
+		return trace.Errorf("InteractiveSessionClosed failed to read and search utmp database")
 	}
 
 	return nil
