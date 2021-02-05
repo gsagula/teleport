@@ -480,10 +480,9 @@ func (c *ServerContext) SetTerm(t Terminal) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	c.termTTY = nil
 	if t != nil {
 		c.termTTY = t.TTY()
-	} else {
-		c.termTTY = nil
 	}
 
 	c.term = t
@@ -634,13 +633,11 @@ func (c *ServerContext) Close() error {
 	// with information that it's now closed
 	if c.termTTY != nil {
 		ttyName, err := utils.TtyName(c.termTTY)
-
 		if err != nil {
 			return trace.Wrap(err)
 		}
 
 		err = utils.InteractiveSessionClosed(*ttyName)
-
 		if err != nil {
 			return trace.Wrap(err)
 		}
