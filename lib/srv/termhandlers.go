@@ -110,7 +110,7 @@ func (t *TermHandlers) HandlePTYReq(ch ssh.Channel, req *ssh.Request, ctx *Serve
 	if err != nil {
 		return trace.Wrap(err)
 	}
-	err = utils.InteractiveSessionOpened(ctx.Identity.Login, hostname, remoteIP, *ttyName, "")
+	err = utils.InteractiveSessionOpened(ctx.Identity.Login, hostname, remoteIP, *ttyName)
 	if err != nil {
 		return trace.Wrap(err)
 	}

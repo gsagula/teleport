@@ -35,16 +35,15 @@ static int max_len_tty_name() {
 
 // Low level C function to add a new USER_PROCESS entry to the database.
 // This function does not perform any argument validation.
-static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_addr_v6[4], char *tty_name, char* inittabId) {
-    utmpname(_PATH_UTMP);
+static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_addr_v6[4], char *tty_name) {
     struct utmp entry;
     entry.ut_type = USER_PROCESS;
-    strcpy((char*) &entry.ut_line, tty_name);
-    strcpy((char*) &entry.ut_id, inittabId);
+    strcpy((char*) &entry.ut_line, tty_name + strlen("/dev/"));
+    strcpy((char*) &entry.ut_id, tty_name + strlen("/dev/pts/"));
     entry.ut_pid = getpid();
     strcpy((char*) &entry.ut_host, hostname);
     strcpy((char*) &entry.ut_user, username);
-    entry.ut_session = 0;
+    entry.ut_session = 1;
     struct timeval timestamp;
     int failed = gettimeofday(&timestamp, NULL);
     if (failed != 0) {
@@ -55,7 +54,7 @@ static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_ad
     memcpy(&entry.ut_addr_v6, &remote_addr_v6, sizeof(int32_t) * 4);
     setutent();
     if (pututline(&entry) == NULL) {
-        return errno == EPERM ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
+        return errno == EPERM || errno == EACCES ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }
     endutent();
     updwtmp(_PATH_WTMP, &entry);
@@ -65,7 +64,6 @@ static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_ad
 // Low level C function to mark a database entry as DEAD_PROCESS.
 // This function does not perform string argument validation.
 static int uacc_mark_utmp_entry_dead(char *tty_name) {
-    utmpname(_PATH_UTMP);
     setutent();
     struct utmp line;
     strcpy((char*) &line.ut_line, tty_name);

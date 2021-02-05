@@ -48,7 +48,7 @@ var nameMaxLen = 255
 // `remoteAddrV6`: IPv6 address of the remote host.
 // `ttyName`: Name of the TTY without the `/dev/` prefix.
 // `inittabID`: The ID of the inittab entry.
-func InteractiveSessionOpened(username string, hostname string, remote net.IP, ttyName string, inittabID string) error {
+func InteractiveSessionOpened(username string, hostname string, remote net.IP, ttyName string) error {
 	rawV6 := remote.To16()
 	groupedV6 := [4]int32{}
 	for i := range groupedV6 {
@@ -57,13 +57,11 @@ func InteractiveSessionOpened(username string, hostname string, remote net.IP, t
 
 	// String parameter validation.
 	if len(username) > nameMaxLen {
-		return errors.New("username length exceeds OS limits")
+		return errors.New(("username length exceeds OS limits"))
 	} else if len(hostname) > nameMaxLen {
-		return errors.New("hostname length exceeds OS limits")
+		return errors.New(("hostname length exceeds OS limits"))
 	} else if len(ttyName) > (int)(C.max_len_tty_name()-1) {
-		return errors.New("tty name length exceeds OS limits")
-	} else if len(inittabID) > inittabMaxLen {
-		return errors.New("inittabID length exceeds OS limits")
+		return errors.New(("tty name length exceeds OS limits"))
 	}
 
 	// Convert Go strings into C strings that we can pass over ffi.
@@ -73,8 +71,6 @@ func InteractiveSessionOpened(username string, hostname string, remote net.IP, t
 	defer C.free(unsafe.Pointer(CHostname))
 	var CTtyName = C.CString(ttyName)
 	defer C.free(unsafe.Pointer(CTtyName))
-	var CInittabID = C.CString(inittabID)
-	defer C.free(unsafe.Pointer(CInittabID))
 
 	// Convert IPv6 array into C integer format.
 	var CInts = [4]C.int{}
@@ -83,15 +79,15 @@ func InteractiveSessionOpened(username string, hostname string, remote net.IP, t
 	}
 
 	accountDb.Lock()
-	var status = C.uacc_add_utmp_entry(CUsername, CHostname, (*C.int)(&CInts[0]), CTtyName, CInittabID)
+	var status = C.uacc_add_utmp_entry(CUsername, CHostname, (*C.int)(&CInts[0]), CTtyName)
 	accountDb.Unlock()
 
 	if status == C.UACC_GET_TIME_ERROR {
-		return errors.New("gettimeofday failed")
+		return errors.New("1 gettimeofday failed")
 	} else if status == C.UACC_UTMP_MISSING_PERMISSIONS {
-		return errors.New("missing permissions to write to utmp/wtmp")
+		return errors.New("1 missing permissions to write to utmp/wtmp")
 	} else if status == C.UACC_UTMP_WRITE_ERROR {
-		return errors.New("failed to add entry to utmp database")
+		return errors.New("1 failed to add entry to utmp database")
 	}
 
 	return nil
@@ -116,13 +112,13 @@ func InteractiveSessionClosed(ttyName string) error {
 	accountDb.Unlock()
 
 	if status == C.UACC_GET_TIME_ERROR {
-		return errors.New("gettimeofday failed")
+		return errors.New("2 gettimeofday failed")
 	} else if status == C.UACC_UTMP_MISSING_PERMISSIONS {
-		return errors.New("missing permissions to write to utmp/wtmp")
+		return errors.New("2 missing permissions to write to utmp/wtmp")
 	} else if status == C.UACC_UTMP_WRITE_ERROR {
-		return errors.New("failed to add entry to utmp database")
+		return errors.New("2 failed to add entry to utmp database")
 	} else if status == C.UACC_UTMP_READ_ERROR {
-		return errors.New("failed to read and search utmp database")
+		return errors.New("2 failed to read and search utmp database")
 	}
 
 	return nil
