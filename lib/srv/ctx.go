@@ -627,6 +627,9 @@ func (c *ServerContext) Close() error {
 		return trace.Wrap(err)
 	}
 
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	// if there was a tty allocated, update the user accounting database
 	// with information that it's now closed
 	if c.termTTY != nil {
