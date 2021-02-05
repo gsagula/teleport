@@ -21,6 +21,7 @@ limitations under the License.
 #include <stdint.h>
 #include <string.h>
 #include <utmp.h>
+#include <utmpx.h>
 #include <errno.h>
 
 int UACC_GET_TIME_ERROR = 1;
@@ -30,13 +31,21 @@ int UACC_UTMP_READ_ERROR = 4;
 
 // The max byte length of the C string representing the TTY name.
 static int max_len_tty_name() {
-    return UT_LINESIZE;
+    return __UT_LINESIZE;
+}
+
+static int upduacclog(struct utmpx *entry) {
+    utmpname(_PATH_WTMP);
+    setutxent();
+    pututxline(entry);
+    endutxent();
 }
 
 // Low level C function to add a new USER_PROCESS entry to the database.
 // This function does not perform any argument validation.
 static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_addr_v6[4], char *tty_name) {
-    struct utmp entry;
+    utmpname(_PATH_UTMP);
+    struct utmpx entry;
     entry.ut_type = USER_PROCESS;
     strcpy((char*) &entry.ut_line, tty_name + strlen("/dev/"));
     strcpy((char*) &entry.ut_id, tty_name + strlen("/dev/pts/"));
@@ -52,34 +61,35 @@ static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_ad
     entry.ut_tv.tv_sec = timestamp.tv_sec;
     entry.ut_tv.tv_usec = timestamp.tv_usec;
     memcpy(&entry.ut_addr_v6, &remote_addr_v6, sizeof(int32_t) * 4);
-    setutent();
-    if (pututline(&entry) == NULL) {
+    setutxent();
+    if (pututxline(&entry) == NULL) {
         return errno == EPERM || errno == EACCES ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }
-    endutent();
-    updwtmp(_PATH_WTMP, &entry);
+    endutxent();
+    upduacclog(&entry);
     return 0;
 }
 
 // Low level C function to mark a database entry as DEAD_PROCESS.
 // This function does not perform string argument validation.
 static int uacc_mark_utmp_entry_dead(char *tty_name) {
-    setutent();
-    struct utmp line;
+    utmpname(_PATH_UTMP);
+    setutxent();
+    struct utmpx line;
     strcpy((char*) &line.ut_line, tty_name);
-    struct utmp entry;
-    struct utmp *bptr = &entry;
-    int status = getutline_r(&line, &entry, &bptr);
-    if (status != 0) {
+    struct utmpx *entry_t = getutxline(&line);
+    if (entry_t == NULL) {
         return UACC_UTMP_READ_ERROR;
     }
+    struct utmpx entry;
+    memcpy(&entry, entry_t, sizeof(struct utmpx));
     entry.ut_type = DEAD_PROCESS;
-    setutent();
-    if (pututline(&entry) == NULL) {
+    setutxent();
+    if (pututxline(&entry) == NULL) {
         return errno == EPERM ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }
-    endutent();
-    updwtmp(_PATH_WTMP, &entry);
+    endutxent();
+    upduacclog(&entry);
     return 0;
 }
 
