@@ -35,7 +35,7 @@ static int max_len_tty_name() {
 
 // Low level C function to add a new USER_PROCESS entry to the database.
 // This function does not perform any argument validation.
-static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_addr_v6[4], char *tty_name) {
+static int uacc_add_utmp_entry(const char *username, const char *hostname, const int32_t remote_addr_v6[4], const char *tty_name) {
     struct utmp entry;
     entry.ut_type = USER_PROCESS;
     strcpy((char*) &entry.ut_line, tty_name + strlen("/dev/"));
@@ -63,7 +63,7 @@ static int uacc_add_utmp_entry(char *username, char *hostname, int32_t remote_ad
 
 // Low level C function to mark a database entry as DEAD_PROCESS.
 // This function does not perform string argument validation.
-static int uacc_mark_utmp_entry_dead(char *tty_name) {
+static int uacc_mark_utmp_entry_dead(const char *tty_name) {
     setutent();
     struct utmp line;
     strcpy((char*) &line.ut_line, tty_name);
