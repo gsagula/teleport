@@ -17,6 +17,7 @@ limitations under the License.
 package srv
 
 import (
+	"fmt"
 	"net"
 	"os"
 
@@ -26,6 +27,7 @@ import (
 	"github.com/gravitational/teleport/lib/sshutils"
 	"github.com/gravitational/teleport/lib/utils"
 	"github.com/gravitational/trace"
+	log "github.com/sirupsen/logrus"
 )
 
 // TermHandlers are common terminal handling functions used by both the
@@ -112,7 +114,7 @@ func (t *TermHandlers) HandlePTYReq(ch ssh.Channel, req *ssh.Request, ctx *Serve
 	}
 	err = utils.InteractiveSessionOpened(ctx.Identity.Login, hostname, remoteIP, *ttyName)
 	if err != nil {
-		return trace.Wrap(err)
+		log.Warn(fmt.Sprintf("failed to register new interactive session for user %s in the system account database with error %s", ctx.Identity.Login, err))
 	}
 
 	return nil

@@ -639,7 +639,7 @@ func (c *ServerContext) Close() error {
 
 		err = utils.InteractiveSessionClosed(*ttyName)
 		if err != nil {
-			return trace.Wrap(err)
+			log.Warn(fmt.Sprintf("failed to register closed interactive session for user %s in the system account database with error %s", c.Identity.Login, err))
 		}
 	}
 
