@@ -76,7 +76,7 @@ static int uacc_mark_utmp_entry_dead(char *tty_name) {
     entry.ut_type = DEAD_PROCESS;
     setutent();
     if (pututline(&entry) == NULL) {
-        return errno == EPERM ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
+        return errno == EPERM || errno == EACCES ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }
     endutent();
     updwtmp(_PATH_WTMP, &entry);
