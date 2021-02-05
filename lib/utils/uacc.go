@@ -44,7 +44,7 @@ var nameMaxLen = 255
 // `hostname`: Name of the system the user is logged into.
 // `remoteAddrV6`: IPv6 address of the remote host.
 // `ttyName`: Name of the TTY without the `/dev/` prefix.
-func InteractiveSessionOpened(username string, hostname string, remote net.IP, ttyName string) error {
+func InteractiveSessionOpened(username, hostname string, remote net.IP, ttyName string) error {
 	rawV6 := remote.To16()
 	groupedV6 := [4]int32{}
 	for i := range groupedV6 {
