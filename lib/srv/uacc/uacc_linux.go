@@ -1,3 +1,5 @@
+// +build linux
+
 /*
 Copyright 2021 Gravitational, Inc.
 
