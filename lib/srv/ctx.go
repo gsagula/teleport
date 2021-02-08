@@ -619,9 +619,6 @@ func (c *ServerContext) Close() error {
 		return trace.Wrap(err)
 	}
 
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	return nil
 }
 
