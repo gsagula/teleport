@@ -173,8 +173,9 @@ func RunCommand() (io.Writer, int, error) {
 		if uaccErr != nil {
 			if soft {
 				log.Warnf("failed to register closed interactive session for tty %s in the system account database with error %s", *ttyName, trace.Wrap(uaccErr).Error())
+			} else {
+				return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter(err.Error())
 			}
-			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter(err.Error())
 		}
 	}
 
