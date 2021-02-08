@@ -38,14 +38,14 @@ var accountDb sync.Mutex
 // Max length of username and hostname as defined by glibc.
 var nameMaxLen = 255
 
-// InteractiveSessionOpened writes a new entry to the utmp database with a tag of `USER_PROCESS`.
+// Open writes a new entry to the utmp database with a tag of `USER_PROCESS`.
 // This should be called when an interactive session is started.
 //
 // `username`: Name of the user the interactive session is running under.
 // `hostname`: Name of the system the user is logged into.
 // `remoteAddrV6`: IPv6 address of the remote host.
 // `ttyName`: Name of the TTY without the `/dev/` prefix.
-func InteractiveSessionOpened(username, hostname string, remote net.IP, ttyName string) error {
+func Open(username, hostname string, remote net.IP, ttyName string) error {
 	rawV6 := remote.To16()
 	groupedV6 := [4]int32{}
 	for i := range groupedV6 {
@@ -92,11 +92,11 @@ func InteractiveSessionOpened(username, hostname string, remote net.IP, ttyName 
 	return nil
 }
 
-// InteractiveSessionClosed marks an entry in the utmp database as DEAD_PROCESS.
+// Close marks an entry in the utmp database as DEAD_PROCESS.
 // This should be called when an interactive session exits.
 //
 // The `ttyName` parameter must be the name of the TTY without the `/dev/` prefix.
-func InteractiveSessionClosed(ttyName string) error {
+func Close(ttyName string) error {
 	// String parameter validation.
 	if len(ttyName) > (int)(C.max_len_tty_name()-1) {
 		return trace.BadParameter("tty name length exceeds OS limits")

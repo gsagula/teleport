@@ -638,7 +638,7 @@ func (c *ServerContext) Close() error {
 	// if there was a tty allocated, update the user accounting database
 	// with information that it's now closed
 	if c.TTYName != nil {
-		err = uacc.InteractiveSessionClosed(*c.TTYName)
+		err = uacc.Close(*c.TTYName)
 		if err != nil {
 			log.Warn(fmt.Sprintf("failed to register closed interactive session for user %s in the system account database with error %s", c.Identity.Login, err))
 		}
