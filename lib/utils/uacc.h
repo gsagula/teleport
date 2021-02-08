@@ -27,6 +27,7 @@ int UACC_GET_TIME_ERROR = 1;
 int UACC_UTMP_MISSING_PERMISSIONS = 2;
 int UACC_UTMP_WRITE_ERROR = 3;
 int UACC_UTMP_READ_ERROR = 4;
+int UACC_UTMP_FAILED_OPEN = 5;
 
 // The max byte length of the C string representing the TTY name.
 static int max_len_tty_name() {
@@ -52,7 +53,11 @@ static int uacc_add_utmp_entry(const char *username, const char *hostname, const
     entry.ut_tv.tv_sec = timestamp.tv_sec;
     entry.ut_tv.tv_usec = timestamp.tv_usec;
     memcpy(&entry.ut_addr_v6, &remote_addr_v6, sizeof(int32_t) * 4);
+    errno = 0;
     setutent();
+    if (errno != 0) {
+        return UACC_UTMP_FAILED_OPEN;
+    }
     if (pututline(&entry) == NULL) {
         return errno == EPERM || errno == EACCES ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }
@@ -64,7 +69,11 @@ static int uacc_add_utmp_entry(const char *username, const char *hostname, const
 // Low level C function to mark a database entry as DEAD_PROCESS.
 // This function does not perform string argument validation.
 static int uacc_mark_utmp_entry_dead(const char *tty_name) {
+    errno = 0;
     setutent();
+    if (errno != 0) {
+        return UACC_UTMP_FAILED_OPEN;
+    }
     struct utmp line;
     strcpy((char*) &line.ut_line, tty_name);
     struct utmp *entry_t = getutline(&line);
@@ -74,7 +83,11 @@ static int uacc_mark_utmp_entry_dead(const char *tty_name) {
     struct utmp entry;
     memcpy(&entry, entry_t, sizeof(struct utmp));
     entry.ut_type = DEAD_PROCESS;
+    errno = 0;
     setutent();
+    if (errno != 0) {
+        return UACC_UTMP_FAILED_OPEN;
+    }
     if (pututline(&entry) == NULL) {
         return errno == EPERM || errno == EACCES ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }

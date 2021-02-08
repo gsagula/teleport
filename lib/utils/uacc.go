@@ -85,6 +85,8 @@ func InteractiveSessionOpened(username, hostname string, remote net.IP, ttyName 
 		return trace.Errorf("InteractiveSessionOpened missing permissions to write to utmp/wtmp")
 	} else if status == C.UACC_UTMP_WRITE_ERROR {
 		return trace.Errorf("InteractiveSessionOpened failed to add entry to utmp database")
+	} else if status == C.UACC_UTMP_FAILED_OPEN {
+		return trace.Errorf("InteractiveSessionOpened failed to open user account database")
 	}
 
 	return nil
@@ -116,6 +118,8 @@ func InteractiveSessionClosed(ttyName string) error {
 		return trace.Errorf("InteractiveSessionClosed failed to add entry to utmp database")
 	} else if status == C.UACC_UTMP_READ_ERROR {
 		return trace.Errorf("InteractiveSessionClosed failed to read and search utmp database")
+	} else if status == C.UACC_UTMP_FAILED_OPEN {
+		return trace.Errorf("InteractiveSessionClosed failed to open user account database")
 	}
 
 	return nil
