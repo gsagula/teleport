@@ -252,9 +252,6 @@ type ServerContext struct {
 	// session. Terminals can be allocated for both "exec" or "session" requests.
 	termAllocated bool
 
-	// TTYName is used to store the name of the TTY if any is allocated, otherwise this is nil
-	TTYName *string
-
 	// request is the request that was issued by the client
 	request *ssh.Request
 
@@ -478,6 +475,7 @@ func (c *ServerContext) GetTerm() Terminal {
 func (c *ServerContext) SetTerm(t Terminal) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+
 	c.term = t
 }
 
