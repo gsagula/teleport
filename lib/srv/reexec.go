@@ -169,10 +169,10 @@ func RunCommand() (io.Writer, int, error) {
 		if err != nil {
 			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter("failed to resolve tty soft link")
 		}
-		soft, err := createUaccSession(*ttyName, &c)
-		if err != nil {
+		soft, uaccErr := createUaccSession(*ttyName, &c)
+		if uaccErr != nil {
 			if soft {
-				log.Warnf("failed to register closed interactive session for tty %s in the system account database with error %s", *ttyName, err.Error())
+				log.Warnf("failed to register closed interactive session for tty %s in the system account database with error %s", *ttyName, trace.Wrap(uaccErr).Error())
 			}
 			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter(err.Error())
 		}
@@ -252,9 +252,9 @@ func RunCommand() (io.Writer, int, error) {
 	err = cmd.Wait()
 
 	if c.Terminal {
-		err = endUaccSession(*ttyName)
-		if err != nil {
-			log.Warnf("failed to register closed interactive session for tty %s in the system account database with error %s", *ttyName, err.Error())
+		uaccErr := endUaccSession(*ttyName)
+		if uaccErr != nil {
+			log.Warnf("failed to register closed interactive session for tty %s in the system account database with error %s", *ttyName, trace.Wrap(uaccErr).Error())
 		}
 	}
 
