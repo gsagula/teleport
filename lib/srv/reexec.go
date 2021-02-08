@@ -99,18 +99,18 @@ type ExecCommand struct {
 	RemoteAddr net.Addr `json:"remote_addr"`
 }
 
-func createUaccSession(ttyName string, c *ExecCommand) (error, bool) {
+func createUaccSession(ttyName string, c *ExecCommand) (bool, error) {
 	remoteStringIP, _, _ := net.SplitHostPort(c.RemoteAddr.String())
 	remoteIP := net.ParseIP(remoteStringIP)
 	hostname, err := os.Hostname()
 	if err != nil {
-		return trace.Wrap(err), false
+		return false, trace.Wrap(err)
 	}
 	err = uacc.Open(c.Login, hostname, remoteIP, ttyName)
 	if err != nil {
-		return trace.Wrap(err), true
+		return true, trace.Wrap(err)
 	}
-	return nil, false
+	return false, nil
 }
 
 func endUaccSession(ttyName string) error {
@@ -169,10 +169,10 @@ func RunCommand() (io.Writer, int, error) {
 		if err != nil {
 			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter("failed to resolve tty soft link")
 		}
-		err, soft := createUaccSession(*ttyName, &c)
+		soft, err := createUaccSession(*ttyName, &c)
 		if err != nil {
 			if soft {
-				log.Warnf("failed to register closed interactive session for tty %s in the system account database with error %s", ttyName, err)
+				log.Warnf("failed to register closed interactive session for tty %s in the system account database with error %s", ttyName, err.Error())
 			}
 			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter(err.Error())
 		}
@@ -254,7 +254,7 @@ func RunCommand() (io.Writer, int, error) {
 	if c.Terminal {
 		err = endUaccSession(*ttyName)
 		if err != nil {
-			log.Warnf("failed to register closed interactive session for tty %s in the system account database with error %s", ttyName, err)
+			log.Warnf("failed to register closed interactive session for tty %s in the system account database with error %s", ttyName, err.Error())
 		}
 	}
 
