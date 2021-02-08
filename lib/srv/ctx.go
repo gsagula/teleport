@@ -252,9 +252,8 @@ type ServerContext struct {
 	// session. Terminals can be allocated for both "exec" or "session" requests.
 	termAllocated bool
 
-	// termTTY is used to store the file descriptor of the allocated TTY if one has
-	// been allocated, otherwise this is nil.
-	termTTY *os.File
+	// TTYName is used to store the name of the TTY if any is allocated, otherwise this is nil
+	TTYName *string
 
 	// request is the request that was issued by the client
 	request *ssh.Request
@@ -480,9 +479,15 @@ func (c *ServerContext) SetTerm(t Terminal) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.termTTY = nil
+	c.TTYName = nil
 	if t != nil {
-		c.termTTY = t.TTY()
+		name, err := utils.TtyName(t.TTY())
+
+		if err != nil {
+			panic("this should be impossible")
+		}
+
+		c.TTYName = name
 	}
 
 	c.term = t
@@ -631,13 +636,8 @@ func (c *ServerContext) Close() error {
 
 	// if there was a tty allocated, update the user accounting database
 	// with information that it's now closed
-	if c.termTTY != nil {
-		ttyName, err := utils.TtyName(c.termTTY)
-		if err != nil {
-			return trace.Wrap(err)
-		}
-
-		err = utils.InteractiveSessionClosed(*ttyName)
+	if c.TTYName != nil {
+		err = utils.InteractiveSessionClosed(*c.TTYName)
 		if err != nil {
 			log.Warn(fmt.Sprintf("failed to register closed interactive session for user %s in the system account database with error %s", c.Identity.Login, err))
 		}
