@@ -108,7 +108,7 @@ func (t *TermHandlers) HandlePTYReq(ch ssh.Channel, req *ssh.Request, ctx *Serve
 		return trace.Wrap(err)
 	}
 	tty := term.TTY()
-	ttyName, err := utils.TtyName(tty)
+	ttyName, err := TtyName(tty)
 	if err != nil {
 		return trace.Wrap(err)
 	}

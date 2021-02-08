@@ -481,7 +481,7 @@ func (c *ServerContext) SetTerm(t Terminal) {
 
 	c.TTYName = nil
 	if t != nil {
-		name, err := utils.TtyName(t.TTY())
+		name, err := TtyName(t.TTY())
 
 		if err != nil {
 			panic("this should be impossible")
