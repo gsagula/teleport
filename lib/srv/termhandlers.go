@@ -17,17 +17,11 @@ limitations under the License.
 package srv
 
 import (
-	"fmt"
-	"net"
-	"os"
-
 	"golang.org/x/crypto/ssh"
 
 	rsession "github.com/gravitational/teleport/lib/session"
-	"github.com/gravitational/teleport/lib/srv/uacc"
 	"github.com/gravitational/teleport/lib/sshutils"
 	"github.com/gravitational/trace"
-	log "github.com/sirupsen/logrus"
 )
 
 // TermHandlers are common terminal handling functions used by both the
@@ -98,23 +92,6 @@ func (t *TermHandlers) HandlePTYReq(ch ssh.Channel, req *ssh.Request, ctx *Serve
 	// update the session
 	if err := t.SessionRegistry.NotifyWinChange(*params, ctx); err != nil {
 		ctx.Errorf("Unable to update session: %v", err)
-	}
-
-	// update the user accounting database about the new tty
-	remoteStringIP, _, _ := net.SplitHostPort(ctx.ConnectionContext.ServerConn.RemoteAddr().String())
-	remoteIP := net.ParseIP(remoteStringIP)
-	hostname, err := os.Hostname()
-	if err != nil {
-		return trace.Wrap(err)
-	}
-	tty := term.TTY()
-	ttyName, err := TtyName(tty)
-	if err != nil {
-		return trace.Wrap(err)
-	}
-	err = uacc.Open(ctx.Identity.Login, hostname, remoteIP, *ttyName)
-	if err != nil {
-		log.Warn(fmt.Sprintf("failed to register new interactive session for user %s in the system account database with error %s", ctx.Identity.Login, err))
 	}
 
 	return nil

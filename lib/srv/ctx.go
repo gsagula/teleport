@@ -36,7 +36,6 @@ import (
 	"github.com/gravitational/teleport/lib/pam"
 	"github.com/gravitational/teleport/lib/services"
 	rsession "github.com/gravitational/teleport/lib/session"
-	"github.com/gravitational/teleport/lib/srv/uacc"
 	"github.com/gravitational/teleport/lib/sshutils"
 	"github.com/gravitational/teleport/lib/utils"
 
@@ -479,18 +478,6 @@ func (c *ServerContext) GetTerm() Terminal {
 func (c *ServerContext) SetTerm(t Terminal) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	c.TTYName = nil
-	if t != nil {
-		name, err := TtyName(t.TTY())
-
-		if err != nil {
-			panic("this should be impossible")
-		}
-
-		c.TTYName = name
-	}
-
 	c.term = t
 }
 
@@ -634,15 +621,6 @@ func (c *ServerContext) Close() error {
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
-
-	// if there was a tty allocated, update the user accounting database
-	// with information that it's now closed
-	if c.TTYName != nil {
-		err = uacc.Close(*c.TTYName)
-		if err != nil {
-			log.Warn(fmt.Sprintf("failed to register closed interactive session for user %s in the system account database with error %s", c.Identity.Login, err))
-		}
-	}
 
 	return nil
 }

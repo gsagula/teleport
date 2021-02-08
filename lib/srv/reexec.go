@@ -36,6 +36,7 @@ import (
 	"github.com/gravitational/teleport"
 	"github.com/gravitational/teleport/lib/pam"
 	"github.com/gravitational/teleport/lib/shell"
+	"github.com/gravitational/teleport/lib/srv/uacc"
 	"github.com/gravitational/teleport/lib/sshutils"
 	"github.com/gravitational/teleport/lib/utils"
 
@@ -93,6 +94,31 @@ type ExecCommand struct {
 
 	// IsTestStub is used by tests to mock the shell.
 	IsTestStub bool `json:"is_test_stub"`
+
+	// RemoteAddr is the address of the remote host.
+	RemoteAddr net.Addr `json:"remote_addr"`
+}
+
+func createUaccSession(ttyName string, c *ExecCommand) error {
+	remoteStringIP, _, _ := net.SplitHostPort(c.RemoteAddr.String())
+	remoteIP := net.ParseIP(remoteStringIP)
+	hostname, err := os.Hostname()
+	if err != nil {
+		return trace.Wrap(err)
+	}
+	err = uacc.Open(c.Login, hostname, remoteIP, ttyName)
+	if err != nil {
+		log.Warn(fmt.Sprintf("failed to register new interactive session for user %s in the system account database with error %s", c.Login, err))
+	}
+	return nil
+}
+
+func endUaccSession(ttyName string) error {
+	err := uacc.Close(ttyName)
+	if err != nil {
+		log.Warn(fmt.Sprintf("failed to register closed interactive session for tty %s in the system account database with error %s", ttyName, err))
+	}
+	return nil
 }
 
 // RunCommand reads in the command to run from the parent process (over a
@@ -127,6 +153,7 @@ func RunCommand() (io.Writer, int, error) {
 
 	var tty *os.File
 	var pty *os.File
+	var ttyName *string
 
 	// If a terminal was requested, file descriptor 4 and 5 always point to the
 	// PTY and TTY. Extract them and set the controlling TTY. Otherwise, connect
@@ -138,6 +165,14 @@ func RunCommand() (io.Writer, int, error) {
 			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter("pty and tty not found")
 		}
 		errorWriter = tty
+		*ttyName, err = os.Readlink(tty.Name())
+		if err != nil {
+			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter("failed to resolve tty soft link")
+		}
+		err = createUaccSession(*ttyName, &c)
+		if err != nil {
+			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter(err.Error())
+		}
 	}
 
 	// If PAM is enabled, open a PAM context. This has to be done before anything
@@ -212,6 +247,14 @@ func RunCommand() (io.Writer, int, error) {
 	// running exit 2), the shell will print an error if appropriate and return
 	// an exit code.
 	err = cmd.Wait()
+
+	if c.Terminal {
+		err = endUaccSession(*ttyName)
+		if err != nil {
+			return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(err)
+		}
+	}
+
 	return ioutil.Discard, exitCode(err), trace.Wrap(err)
 }
 
