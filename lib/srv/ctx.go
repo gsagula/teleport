@@ -739,7 +739,7 @@ func (c *ServerContext) ExecCommand() (*ExecCommand, error) {
 		ServiceName:           pamServiceName,
 		UsePAMAuth:            pamUseAuth,
 		IsTestStub:            c.IsTestStub,
-		RemoteAddr:            c.ConnectionContext.ServerConn.Conn.RemoteAddr(),
+		RemoteAddr:            c.ConnectionContext.ServerConn.Conn.RemoteAddr().String(),
 	}, nil
 }
 

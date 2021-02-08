@@ -96,11 +96,11 @@ type ExecCommand struct {
 	IsTestStub bool `json:"is_test_stub"`
 
 	// RemoteAddr is the address of the remote host.
-	RemoteAddr net.Addr `json:"remote_addr"`
+	RemoteAddr string `json:"remote_addr"`
 }
 
 func createUaccSession(ttyName string, c *ExecCommand) (bool, error) {
-	remoteStringIP, _, _ := net.SplitHostPort(c.RemoteAddr.String())
+	remoteStringIP, _, _ := net.SplitHostPort(c.RemoteAddr)
 	remoteIP := net.ParseIP(remoteStringIP)
 	hostname, err := os.Hostname()
 	if err != nil {
