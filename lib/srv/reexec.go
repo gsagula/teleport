@@ -108,7 +108,7 @@ func createUaccSession(ttyName string, c *ExecCommand) error {
 	}
 	err = uacc.Open(c.Login, hostname, remoteIP, ttyName)
 	if err != nil {
-		log.Warn(fmt.Sprintf("failed to register new interactive session for user %s in the system account database with error %s", c.Login, err))
+		log.Warnf("failed to register new interactive session for user %s in the system account database with error %s", c.Login, err)
 	}
 	return nil
 }
@@ -116,7 +116,7 @@ func createUaccSession(ttyName string, c *ExecCommand) error {
 func endUaccSession(ttyName string) error {
 	err := uacc.Close(ttyName)
 	if err != nil {
-		log.Warn(fmt.Sprintf("failed to register closed interactive session for tty %s in the system account database with error %s", ttyName, err))
+		log.Warnf("failed to register closed interactive session for tty %s in the system account database with error %s", ttyName, err)
 	}
 	return nil
 }
