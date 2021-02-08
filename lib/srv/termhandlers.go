@@ -24,6 +24,7 @@ import (
 	"golang.org/x/crypto/ssh"
 
 	rsession "github.com/gravitational/teleport/lib/session"
+	"github.com/gravitational/teleport/lib/srv/uacc"
 	"github.com/gravitational/teleport/lib/sshutils"
 	"github.com/gravitational/trace"
 	log "github.com/sirupsen/logrus"
@@ -111,7 +112,7 @@ func (t *TermHandlers) HandlePTYReq(ch ssh.Channel, req *ssh.Request, ctx *Serve
 	if err != nil {
 		return trace.Wrap(err)
 	}
-	err = InteractiveSessionOpened(ctx.Identity.Login, hostname, remoteIP, *ttyName)
+	err = uacc.InteractiveSessionOpened(ctx.Identity.Login, hostname, remoteIP, *ttyName)
 	if err != nil {
 		log.Warn(fmt.Sprintf("failed to register new interactive session for user %s in the system account database with error %s", ctx.Identity.Login, err))
 	}

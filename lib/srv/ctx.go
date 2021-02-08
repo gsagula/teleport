@@ -36,6 +36,7 @@ import (
 	"github.com/gravitational/teleport/lib/pam"
 	"github.com/gravitational/teleport/lib/services"
 	rsession "github.com/gravitational/teleport/lib/session"
+	"github.com/gravitational/teleport/lib/srv/uacc"
 	"github.com/gravitational/teleport/lib/sshutils"
 	"github.com/gravitational/teleport/lib/utils"
 
@@ -637,7 +638,7 @@ func (c *ServerContext) Close() error {
 	// if there was a tty allocated, update the user accounting database
 	// with information that it's now closed
 	if c.TTYName != nil {
-		err = InteractiveSessionClosed(*c.TTYName)
+		err = uacc.InteractiveSessionClosed(*c.TTYName)
 		if err != nil {
 			log.Warn(fmt.Sprintf("failed to register closed interactive session for user %s in the system account database with error %s", c.Identity.Login, err))
 		}
