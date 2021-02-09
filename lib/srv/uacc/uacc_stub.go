@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// This is a shim module that compiles on operating systems where we don't support user accounting via utmp/wtmp.
+// This is a shim file that compiles on operating systems where we don't support user accounting via utmp/wtmp.
 
 package uacc
 

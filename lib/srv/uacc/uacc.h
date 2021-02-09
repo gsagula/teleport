@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#ifndef UACC_H
-#define UACC_H
+#ifndef UACC_C
+#define UACC_C
 
 #include <unistd.h>
 #include <stdint.h>

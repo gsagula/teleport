@@ -16,6 +16,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package uacc concerns itself with updating the user account database and log on nodes
+that a client connects to with an interactive session.
+*/
 package uacc
 
 // #include <stdlib.h>
@@ -31,14 +35,11 @@ import (
 	"github.com/gravitational/trace"
 )
 
-// This module concerns itself with updating the user account database and log on nodes
-// that a client connects to with an interactive session.
-
 // Due to thread safety design in glibc we must serialize all access to the accounting database.
 var accountDb sync.Mutex
 
 // Max length of username and hostname as defined by glibc.
-var nameMaxLen = 255
+const nameMaxLen = 255
 
 // Open writes a new entry to the utmp database with a tag of `USER_PROCESS`.
 // This should be called when an interactive session is started.
