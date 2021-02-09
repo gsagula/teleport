@@ -99,6 +99,8 @@ type ExecCommand struct {
 	RemoteAddr string `json:"remote_addr"`
 }
 
+// the boolean return of this function indiciates whether you could gracefully log and move on if there is an error
+// or if false, return and propagate the error upwards
 func createUaccSession(ttyName string, c *ExecCommand) (bool, error) {
 	remoteStringIP, _, _ := net.SplitHostPort(c.RemoteAddr)
 	remoteIP := net.ParseIP(remoteStringIP)
