@@ -96,9 +96,9 @@ func Open(username, hostname string, remote net.IP, ttyName string) error {
 	case C.UACC_UTMP_MISSING_PERMISSIONS:
 		return trace.AccessDenied("missing permissions to write to utmp/wtmp")
 	case C.UACC_UTMP_WRITE_ERROR:
-		return trace.Errorf("failed to add entry to utmp database")
+		return trace.AccessDenied("failed to add entry to utmp database")
 	case C.UACC_UTMP_FAILED_OPEN:
-		return trace.Errorf("failed to open user account database")
+		return trace.AccessDenied("failed to open user account database")
 	default:
 		if status != 0 {
 			return trace.Errorf("unknown error with code %d", status)
@@ -130,11 +130,11 @@ func Close(ttyName string) error {
 	case C.UACC_UTMP_MISSING_PERMISSIONS:
 		return trace.AccessDenied("missing permissions to write to utmp/wtmp")
 	case C.UACC_UTMP_WRITE_ERROR:
-		return trace.Errorf("failed to add entry to utmp database")
+		return trace.AccessDenied("failed to add entry to utmp database")
 	case C.UACC_UTMP_READ_ERROR:
-		return trace.Errorf("failed to read and search utmp database")
+		return trace.AccessDenied("failed to read and search utmp database")
 	case C.UACC_UTMP_FAILED_OPEN:
-		return trace.Errorf("failed to open user account database")
+		return trace.AccessDenied("failed to open user account database")
 	default:
 		if status != 0 {
 			return trace.Errorf("unknown error with code %d", status)
