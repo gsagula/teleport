@@ -38,11 +38,11 @@ static int max_len_tty_name() {
 static int uacc_add_utmp_entry(const char *username, const char *hostname, const int32_t remote_addr_v6[4], const char *tty_name, const char *id, int32_t tv_sec, int32_t tv_usec) {
     struct utmp entry;
     entry.ut_type = USER_PROCESS;
-    strcpy((char*) &entry.ut_line, tty_name);
-    strcpy((char*) &entry.ut_id, id);
+    strncpy((char*) &entry.ut_line, tty_name, UT_LINESIZE);
+    strncpy((char*) &entry.ut_id, id, sizeof(entry.ut_id));
     entry.ut_pid = getpid();
-    strcpy((char*) &entry.ut_host, hostname);
-    strcpy((char*) &entry.ut_user, username);
+    strncpy((char*) &entry.ut_host, hostname, sizeof(entry.ut_host));
+    strncpy((char*) &entry.ut_user, username, sizeof(entry.ut_user));
     entry.ut_session = 1;
     entry.ut_tv.tv_sec = tv_sec;
     entry.ut_tv.tv_usec = tv_usec;
@@ -70,7 +70,7 @@ static int uacc_mark_utmp_entry_dead(const char *tty_name) {
         return UACC_UTMP_FAILED_OPEN;
     }
     struct utmp line;
-    strcpy((char*) &line.ut_line, tty_name);
+    strncpy((char*) &line.ut_line, tty_name, UT_LINESIZE);
     struct utmp *entry_t = getutline(&line);
     if (entry_t == NULL) {
         return UACC_UTMP_READ_ERROR;
