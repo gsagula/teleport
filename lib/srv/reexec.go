@@ -171,12 +171,12 @@ func RunCommand() (io.Writer, int, error) {
 		}
 		err := createUaccSession(ttyName, &c)
 		if err != nil {
-			log.WithError(err).Warnf("failed to register closed interactive session for tty %s in the system account database", ttyName)
+			log.WithError(err).Warnf("Failed to register closed interactive session for tty %s in the system account database.", ttyName)
 		}
 		defer func() {
 			uaccErr := endUaccSession(ttyName)
 			if uaccErr != nil {
-				log.WithError(uaccErr).Warnf("failed to register closed interactive session for tty %s in the system account database", ttyName)
+				log.WithError(uaccErr).Warnf("Failed to register closed interactive session for tty %s in the system account database.", ttyName)
 			}
 		}()
 	}
