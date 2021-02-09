@@ -36,11 +36,11 @@ static int max_len_tty_name() {
 
 // Low level C function to add a new USER_PROCESS entry to the database.
 // This function does not perform any argument validation.
-static int uacc_add_utmp_entry(const char *username, const char *hostname, const int32_t remote_addr_v6[4], const char *tty_name) {
+static int uacc_add_utmp_entry(const char *username, const char *hostname, const int32_t remote_addr_v6[4], const char *tty_name, const char *id) {
     struct utmp entry;
     entry.ut_type = USER_PROCESS;
-    strcpy((char*) &entry.ut_line, tty_name + strlen("/dev/"));
-    strcpy((char*) &entry.ut_id, tty_name + strlen("/dev/pts/"));
+    strcpy((char*) &entry.ut_line, tty_name);
+    strcpy((char*) &entry.ut_id, id);
     entry.ut_pid = getpid();
     strcpy((char*) &entry.ut_host, hostname);
     strcpy((char*) &entry.ut_user, username);

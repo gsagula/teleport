@@ -71,8 +71,10 @@ func Open(username, hostname string, remote net.IP, ttyName string) error {
 	defer C.free(unsafe.Pointer(cUsername))
 	cHostname := C.CString(hostname)
 	defer C.free(unsafe.Pointer(cHostname))
-	cTtyName := C.CString(ttyName)
+	cTtyName := C.CString(ttyName[5:])
 	defer C.free(unsafe.Pointer(cTtyName))
+	cIDName := C.CString(ttyName[9:])
+	defer C.free(unsafe.Pointer(cIDName))
 
 	// Convert IPv6 array into C integer format.
 	CInts := [4]C.int{}
@@ -81,7 +83,7 @@ func Open(username, hostname string, remote net.IP, ttyName string) error {
 	}
 
 	accountDb.Lock()
-	status := C.uacc_add_utmp_entry(cUsername, cHostname, &CInts[0], cTtyName)
+	status := C.uacc_add_utmp_entry(cUsername, cHostname, &CInts[0], cTtyName, cIDName)
 	accountDb.Unlock()
 
 	switch status {
