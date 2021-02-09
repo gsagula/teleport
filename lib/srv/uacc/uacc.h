@@ -53,6 +53,7 @@ static int uacc_add_utmp_entry(const char *username, const char *hostname, const
         return UACC_UTMP_FAILED_OPEN;
     }
     if (pututline(&entry) == NULL) {
+        endutent();
         return errno == EPERM || errno == EACCES ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }
     endutent();
@@ -83,6 +84,7 @@ static int uacc_mark_utmp_entry_dead(const char *tty_name) {
         return UACC_UTMP_FAILED_OPEN;
     }
     if (pututline(&entry) == NULL) {
+        endutent();
         return errno == EPERM || errno == EACCES ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }
     endutent();
