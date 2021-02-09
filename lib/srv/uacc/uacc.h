@@ -23,11 +23,10 @@ limitations under the License.
 #include <utmp.h>
 #include <errno.h>
 
-int UACC_GET_TIME_ERROR = 1;
-int UACC_UTMP_MISSING_PERMISSIONS = 2;
-int UACC_UTMP_WRITE_ERROR = 3;
-int UACC_UTMP_READ_ERROR = 4;
-int UACC_UTMP_FAILED_OPEN = 5;
+int UACC_UTMP_MISSING_PERMISSIONS = 1;
+int UACC_UTMP_WRITE_ERROR = 2;
+int UACC_UTMP_READ_ERROR = 3;
+int UACC_UTMP_FAILED_OPEN = 4;
 
 // The max byte length of the C string representing the TTY name.
 static int max_len_tty_name() {
@@ -36,7 +35,7 @@ static int max_len_tty_name() {
 
 // Low level C function to add a new USER_PROCESS entry to the database.
 // This function does not perform any argument validation.
-static int uacc_add_utmp_entry(const char *username, const char *hostname, const int32_t remote_addr_v6[4], const char *tty_name, const char *id) {
+static int uacc_add_utmp_entry(const char *username, const char *hostname, const int32_t remote_addr_v6[4], const char *tty_name, const char *id, int32_t tv_sec, int32_t tv_usec) {
     struct utmp entry;
     entry.ut_type = USER_PROCESS;
     strcpy((char*) &entry.ut_line, tty_name);
@@ -45,13 +44,8 @@ static int uacc_add_utmp_entry(const char *username, const char *hostname, const
     strcpy((char*) &entry.ut_host, hostname);
     strcpy((char*) &entry.ut_user, username);
     entry.ut_session = 1;
-    struct timeval timestamp;
-    int failed = gettimeofday(&timestamp, NULL);
-    if (failed != 0) {
-        return UACC_GET_TIME_ERROR;
-    }
-    entry.ut_tv.tv_sec = timestamp.tv_sec;
-    entry.ut_tv.tv_usec = timestamp.tv_usec;
+    entry.ut_tv.tv_sec = tv_sec;
+    entry.ut_tv.tv_usec = tv_usec;
     memcpy(&entry.ut_addr_v6, &remote_addr_v6, sizeof(int32_t) * 4);
     errno = 0;
     setutent();

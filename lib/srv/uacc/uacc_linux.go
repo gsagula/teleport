@@ -30,6 +30,7 @@ import (
 	"encoding/binary"
 	"net"
 	"sync"
+	"time"
 	"unsafe"
 
 	"github.com/gravitational/trace"
@@ -82,13 +83,15 @@ func Open(username, hostname string, remote net.IP, ttyName string) error {
 		CInts[i] = (C.int)(groupedV6[i])
 	}
 
+	timestamp := time.Now()
+	secondsElapsed := (C.int32_t)(timestamp.UnixNano() / 1000000000)
+	microsFraction := (C.int32_t)((timestamp.UnixNano() % 1000000000) / 1000000)
+
 	accountDb.Lock()
-	status := C.uacc_add_utmp_entry(cUsername, cHostname, &CInts[0], cTtyName, cIDName)
+	status := C.uacc_add_utmp_entry(cUsername, cHostname, &CInts[0], cTtyName, cIDName, secondsElapsed, microsFraction)
 	accountDb.Unlock()
 
 	switch status {
-	case C.UACC_GET_TIME_ERROR:
-		return trace.Errorf("InteractiveSessionOpened gettimeofday failed")
 	case C.UACC_UTMP_MISSING_PERMISSIONS:
 		return trace.Errorf("InteractiveSessionOpened missing permissions to write to utmp/wtmp")
 	case C.UACC_UTMP_WRITE_ERROR:
@@ -123,8 +126,6 @@ func Close(ttyName string) error {
 	accountDb.Unlock()
 
 	switch status {
-	case C.UACC_GET_TIME_ERROR:
-		return trace.Errorf("InteractiveSessionClosed gettimeofday failed")
 	case C.UACC_UTMP_MISSING_PERMISSIONS:
 		return trace.Errorf("InteractiveSessionClosed missing permissions to write to utmp/wtmp")
 	case C.UACC_UTMP_WRITE_ERROR:
