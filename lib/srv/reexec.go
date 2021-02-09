@@ -167,7 +167,7 @@ func RunCommand() (io.Writer, int, error) {
 		errorWriter = tty
 		*ttyName, err = os.Readlink(tty.Name())
 		if err != nil {
-			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter("failed to resolve tty soft link")
+			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter("failed to resolve tty soft link: %v", err)
 		}
 		soft, uaccErr := createUaccSession(*ttyName, &c)
 		if uaccErr != nil {
