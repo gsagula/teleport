@@ -738,6 +738,7 @@ func (c *ServerContext) ExecCommand() (*ExecCommand, error) {
 		UsePAMAuth:            pamUseAuth,
 		IsTestStub:            c.IsTestStub,
 		RemoteAddr:            c.ConnectionContext.ServerConn.Conn.RemoteAddr().String(),
+		Hostname:              c.srv.GetInfo().GetHostname(),
 	}, nil
 }
 

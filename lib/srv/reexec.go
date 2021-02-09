@@ -97,16 +97,15 @@ type ExecCommand struct {
 
 	// RemoteAddr is the address of the remote host.
 	RemoteAddr string `json:"remote_addr"`
+
+	// The hostname of the node.
+	Hostname string `json:"hostname"`
 }
 
 func createUaccSession(ttyName string, c *ExecCommand) error {
 	remoteStringIP, _, _ := net.SplitHostPort(c.RemoteAddr)
 	remoteIP := net.ParseIP(remoteStringIP)
-	hostname, err := os.Hostname()
-	if err != nil {
-		return trace.Wrap(err)
-	}
-	err = uacc.Open(c.Login, hostname, remoteIP, ttyName)
+	err := uacc.Open(c.Login, c.Hostname, remoteIP, ttyName)
 	if err != nil {
 		return trace.Wrap(err)
 	}
