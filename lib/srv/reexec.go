@@ -107,7 +107,7 @@ func createUaccSession(ttyName string, c *ExecCommand) error {
 	remoteIP := net.ParseIP(remoteStringIP)
 	err := uacc.Open(c.Login, c.Hostname, remoteIP, ttyName)
 	if err != nil {
-		return trace.Wrap(err)
+		return err
 	}
 	return nil
 }
@@ -115,7 +115,7 @@ func createUaccSession(ttyName string, c *ExecCommand) error {
 func endUaccSession(ttyName string) error {
 	err := uacc.Close(ttyName)
 	if err != nil {
-		return trace.Wrap(err)
+		return err
 	}
 	return nil
 }
