@@ -57,28 +57,30 @@ func Open(username, hostname string, remote net.IP, ttyName string) error {
 	// String parameter validation.
 	if len(username) > nameMaxLen {
 		return trace.BadParameter("username length exceeds OS limits")
-	} else if len(hostname) > nameMaxLen {
+	}
+	if len(hostname) > nameMaxLen {
 		return trace.BadParameter("hostname length exceeds OS limits")
-	} else if len(ttyName) > (int)(C.max_len_tty_name()-1) {
+	}
+	if len(ttyName) > (int)(C.max_len_tty_name()-1) {
 		return trace.BadParameter("tty name length exceeds OS limits")
 	}
 
 	// Convert Go strings into C strings that we can pass over ffi.
-	var CUsername = C.CString(username)
-	defer C.free(unsafe.Pointer(CUsername))
-	var CHostname = C.CString(hostname)
-	defer C.free(unsafe.Pointer(CHostname))
-	var CTtyName = C.CString(ttyName)
-	defer C.free(unsafe.Pointer(CTtyName))
+	cUsername := C.CString(username)
+	defer C.free(unsafe.Pointer(cUsername))
+	cHostname := C.CString(hostname)
+	defer C.free(unsafe.Pointer(cHostname))
+	cTtyName := C.CString(ttyName)
+	defer C.free(unsafe.Pointer(cTtyName))
 
 	// Convert IPv6 array into C integer format.
-	var CInts = [4]C.int{}
+	CInts := [4]C.int{}
 	for i := 0; i < 4; i++ {
 		CInts[i] = (C.int)(groupedV6[i])
 	}
 
 	accountDb.Lock()
-	var status = C.uacc_add_utmp_entry(CUsername, CHostname, &CInts[0], CTtyName)
+	status := C.uacc_add_utmp_entry(cUsername, cHostname, &CInts[0], cTtyName)
 	accountDb.Unlock()
 
 	switch status {
@@ -102,7 +104,7 @@ func Open(username, hostname string, remote net.IP, ttyName string) error {
 // Close marks an entry in the utmp database as DEAD_PROCESS.
 // This should be called when an interactive session exits.
 //
-// The `ttyName` parameter must be the name of the TTY without the `/dev/` prefix.
+// The `ttyName` parameter must be the name of the TTY including the `/dev/` prefix.
 func Close(ttyName string) error {
 	// String parameter validation.
 	if len(ttyName) > (int)(C.max_len_tty_name()-1) {
@@ -110,11 +112,11 @@ func Close(ttyName string) error {
 	}
 
 	// Convert Go strings into C strings that we can pass over ffi.
-	var CTtyName = C.CString(ttyName)
-	defer C.free(unsafe.Pointer(CTtyName))
+	cTTYName := C.CString(ttyName)
+	defer C.free(unsafe.Pointer(cTTYName))
 
 	accountDb.Lock()
-	var status = C.uacc_mark_utmp_entry_dead(CTtyName)
+	status := C.uacc_mark_utmp_entry_dead(cTTYName)
 	accountDb.Unlock()
 
 	switch status {
