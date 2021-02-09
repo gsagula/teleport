@@ -722,6 +722,18 @@ func (c *ServerContext) ExecCommand() (*ExecCommand, error) {
 		requestType = c.request.Type
 	}
 
+	var hostname string
+	var err error
+	serverInfo := c.srv.GetInfo()
+	if serverInfo != nil {
+		hostname = serverInfo.GetHostname()
+	} else {
+		hostname, err = os.Hostname()
+		if err != nil {
+			return nil, trace.Wrap(err)
+		}
+	}
+
 	// Create the execCommand that will be sent to the child process.
 	return &ExecCommand{
 		Command:               command,
@@ -738,7 +750,7 @@ func (c *ServerContext) ExecCommand() (*ExecCommand, error) {
 		UsePAMAuth:            pamUseAuth,
 		IsTestStub:            c.IsTestStub,
 		RemoteAddr:            c.ConnectionContext.ServerConn.Conn.RemoteAddr().String(),
-		Hostname:              c.srv.GetInfo().GetHostname(),
+		Hostname:              hostname,
 	}, nil
 }
 

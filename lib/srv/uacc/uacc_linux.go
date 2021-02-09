@@ -84,8 +84,8 @@ func Open(username, hostname string, remote net.IP, ttyName string) error {
 	}
 
 	timestamp := time.Now()
-	secondsElapsed := (C.int32_t)(timestamp.UnixNano() / 1000000000)
-	microsFraction := (C.int32_t)((timestamp.UnixNano() % 1000000000) / 1000000)
+	secondsElapsed := (C.int32_t)(timestamp.Unix())
+	microsFraction := (C.int32_t)((timestamp.UnixNano() % int64(time.Second)) / int64(time.Microsecond))
 
 	accountDb.Lock()
 	status := C.uacc_add_utmp_entry(cUsername, cHostname, &CInts[0], cTtyName, cIDName, secondsElapsed, microsFraction)
