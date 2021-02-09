@@ -81,17 +81,22 @@ func Open(username, hostname string, remote net.IP, ttyName string) error {
 	var status = C.uacc_add_utmp_entry(CUsername, CHostname, &CInts[0], CTtyName)
 	accountDb.Unlock()
 
-	if status == C.UACC_GET_TIME_ERROR {
+	switch status {
+	case C.UACC_GET_TIME_ERROR:
 		return trace.Errorf("InteractiveSessionOpened gettimeofday failed")
-	} else if status == C.UACC_UTMP_MISSING_PERMISSIONS {
+	case C.UACC_UTMP_MISSING_PERMISSIONS:
 		return trace.Errorf("InteractiveSessionOpened missing permissions to write to utmp/wtmp")
-	} else if status == C.UACC_UTMP_WRITE_ERROR {
+	case C.UACC_UTMP_WRITE_ERROR:
 		return trace.Errorf("InteractiveSessionOpened failed to add entry to utmp database")
-	} else if status == C.UACC_UTMP_FAILED_OPEN {
+	case C.UACC_UTMP_FAILED_OPEN:
 		return trace.Errorf("InteractiveSessionOpened failed to open user account database")
-	}
+	default:
+		if status != 0 {
+			return trace.Errorf("unknown error with code %d", status)
+		}
 
-	return nil
+		return nil
+	}
 }
 
 // Close marks an entry in the utmp database as DEAD_PROCESS.
@@ -112,17 +117,22 @@ func Close(ttyName string) error {
 	var status = C.uacc_mark_utmp_entry_dead(CTtyName)
 	accountDb.Unlock()
 
-	if status == C.UACC_GET_TIME_ERROR {
+	switch status {
+	case C.UACC_GET_TIME_ERROR:
 		return trace.Errorf("InteractiveSessionClosed gettimeofday failed")
-	} else if status == C.UACC_UTMP_MISSING_PERMISSIONS {
+	case C.UACC_UTMP_MISSING_PERMISSIONS:
 		return trace.Errorf("InteractiveSessionClosed missing permissions to write to utmp/wtmp")
-	} else if status == C.UACC_UTMP_WRITE_ERROR {
+	case C.UACC_UTMP_WRITE_ERROR:
 		return trace.Errorf("InteractiveSessionClosed failed to add entry to utmp database")
-	} else if status == C.UACC_UTMP_READ_ERROR {
+	case C.UACC_UTMP_READ_ERROR:
 		return trace.Errorf("InteractiveSessionClosed failed to read and search utmp database")
-	} else if status == C.UACC_UTMP_FAILED_OPEN {
+	case C.UACC_UTMP_FAILED_OPEN:
 		return trace.Errorf("InteractiveSessionClosed failed to open user account database")
-	}
+	default:
+		if status != 0 {
+			return trace.Errorf("unknown error with code %d", status)
+		}
 
-	return nil
+		return nil
+	}
 }
