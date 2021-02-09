@@ -29,6 +29,7 @@ import "C"
 import (
 	"encoding/binary"
 	"net"
+	"strings"
 	"sync"
 	"time"
 	"unsafe"
@@ -48,7 +49,7 @@ const nameMaxLen = 255
 // `username`: Name of the user the interactive session is running under.
 // `hostname`: Name of the system the user is logged into.
 // `remoteAddrV6`: IPv6 address of the remote host.
-// `ttyName`: Name of the TTY without the `/dev/` prefix.
+// `ttyName`: Name of the TTY including the `/dev/` prefix.
 func Open(username, hostname string, remote net.IP, ttyName string) error {
 	rawV6 := remote.To16()
 	groupedV6 := [4]int32{}
@@ -72,15 +73,15 @@ func Open(username, hostname string, remote net.IP, ttyName string) error {
 	defer C.free(unsafe.Pointer(cUsername))
 	cHostname := C.CString(hostname)
 	defer C.free(unsafe.Pointer(cHostname))
-	cTtyName := C.CString(ttyName[5:])
+	cTtyName := C.CString(strings.TrimPrefix(ttyName, "/dev/"))
 	defer C.free(unsafe.Pointer(cTtyName))
-	cIDName := C.CString(ttyName[9:])
+	cIDName := C.CString(strings.TrimPrefix(ttyName, "/dev/pts/"))
 	defer C.free(unsafe.Pointer(cIDName))
 
 	// Convert IPv6 array into C integer format.
-	CInts := [4]C.int{}
+	cIP := [4]C.int{}
 	for i := 0; i < 4; i++ {
-		CInts[i] = (C.int)(groupedV6[i])
+		cIP[i] = (C.int)(groupedV6[i])
 	}
 
 	timestamp := time.Now()
@@ -88,7 +89,7 @@ func Open(username, hostname string, remote net.IP, ttyName string) error {
 	microsFraction := (C.int32_t)((timestamp.UnixNano() % int64(time.Second)) / int64(time.Microsecond))
 
 	accountDb.Lock()
-	status := C.uacc_add_utmp_entry(cUsername, cHostname, &CInts[0], cTtyName, cIDName, secondsElapsed, microsFraction)
+	status := C.uacc_add_utmp_entry(cUsername, cHostname, &cIP[0], cTtyName, cIDName, secondsElapsed, microsFraction)
 	accountDb.Unlock()
 
 	switch status {
@@ -118,11 +119,11 @@ func Close(ttyName string) error {
 	}
 
 	// Convert Go strings into C strings that we can pass over ffi.
-	cTTYName := C.CString(ttyName)
-	defer C.free(unsafe.Pointer(cTTYName))
+	cTtyName := C.CString(strings.TrimPrefix(ttyName, "/dev/"))
+	defer C.free(unsafe.Pointer(cTtyName))
 
 	accountDb.Lock()
-	status := C.uacc_mark_utmp_entry_dead(cTTYName)
+	status := C.uacc_mark_utmp_entry_dead(cTtyName)
 	accountDb.Unlock()
 
 	switch status {
