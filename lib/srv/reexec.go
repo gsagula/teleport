@@ -170,14 +170,10 @@ func RunCommand() (io.Writer, int, error) {
 		}
 		err := createUaccSession(ttyName, &c)
 		if err != nil {
-			log.WithError(err).Warnf("Failed to register closed interactive session for tty %s in the system account database.", ttyName)
-		}
-		defer func() {
-			uaccErr := endUaccSession(ttyName)
-			if uaccErr != nil {
-				log.WithError(uaccErr).Warnf("Failed to register closed interactive session for tty %s in the system account database.", ttyName)
+			if !trace.IsAccessDenied(err) {
+				return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(err)
 			}
-		}()
+		}
 	}
 
 	// If PAM is enabled, open a PAM context. This has to be done before anything
@@ -252,6 +248,14 @@ func RunCommand() (io.Writer, int, error) {
 	// running exit 2), the shell will print an error if appropriate and return
 	// an exit code.
 	err = cmd.Wait()
+
+	uaccErr := endUaccSession(ttyName)
+	if uaccErr != nil {
+		if !trace.IsAccessDenied(err) {
+			return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(err)
+		}
+	}
+
 	return ioutil.Discard, exitCode(err), trace.Wrap(err)
 }
 
