@@ -296,6 +296,18 @@ integration:
 	go test -tags "$(PAM_TAG) $(FIPS_TAG) $(BPF_TAG)" $(PACKAGES) $(FLAGS)
 
 #
+# Some integration tests need to be run as root in order to complete successfully.
+# These are run separately to all other integration tests for security.
+# Need a TTY to work.
+#
+INTEGRATION_ROOT_TAG := test_as_root
+.PHONY: integration-root
+integration-root: FLAGS ?= -v -race
+integration-root: PACKAGES := $(shell go list ./... | grep integration)
+integration-root:
+	go test -tags "$(INTEGRATION_ROOT_TAG)" $(PACKAGES) $(FLAGS)
+
+#
 # Lint the Go code.
 # By default lint scans the entire repo. Pass FLAGS='--new' to only scan local
 # changes (or last commit).
