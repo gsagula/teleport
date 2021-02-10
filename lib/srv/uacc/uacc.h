@@ -22,11 +22,13 @@ limitations under the License.
 #include <string.h>
 #include <utmp.h>
 #include <errno.h>
+#include <stdbool.h>
 
 int UACC_UTMP_MISSING_PERMISSIONS = 1;
 int UACC_UTMP_WRITE_ERROR = 2;
 int UACC_UTMP_READ_ERROR = 3;
 int UACC_UTMP_FAILED_OPEN = 4;
+int UACC_UTMP_ENTRY_DOES_NOT_EXIST = 5;
 
 // I opted to do things with setutent/pututline etc manually instead of using the login/logout BSD functions due to
 // running into some weird behaviour. Upon asking on IRC I was told to avoid these with a 10 foot pole and stick to this.
@@ -93,6 +95,33 @@ static int uacc_mark_utmp_entry_dead(const char *tty_name) {
     endutent();
     updwtmp(_PATH_WTMP, &entry);
     return 0;
+}
+
+// Low level C function to check the database for an entry for a given user.
+// This function does not perform string argument validation.
+static int uacc_has_entry_with_user(const char *user) {
+    errno = 0;
+    setutent();
+    if (errno != 0) {
+        return UACC_UTMP_FAILED_OPEN;
+    }
+    bool exists = false;
+    while (true) {
+        struct utmp *entry = getutent();
+        if (entry == NULL) {
+            break;
+        }
+        if (entry->ut_type == USER_PROCESS && strncmp(user, entry->ut_user, 32)) {
+            exists = true;
+            break;
+        }
+    }
+    endutent();
+    if (exists) {
+        return 0;
+    } else {
+        return errno == 0 ? UACC_UTMP_ENTRY_DOES_NOT_EXIST : errno;
+    }
 }
 
 #endif
