@@ -144,7 +144,7 @@ func Close(ttyName string) error {
 	}
 }
 
-// UserWithPtyInDatabase checks the user accounting database for the existance of an USER_PROCESS entry with the given username.
+// UserWithPtyInDatabase checks the user accounting database for the existence of an USER_PROCESS entry with the given username.
 func UserWithPtyInDatabase(username string) (bool, error) {
 	if len(username) > nameMaxLen {
 		return false, trace.BadParameter("username length exceeds OS limits")
