@@ -172,10 +172,6 @@ func RunCommand() (io.Writer, int, error) {
 		if err != nil && !trace.IsAccessDenied(err) {
 			return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(err)
 		}
-			if !trace.IsAccessDenied(err) {
-				return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(err)
-			}
-		}
 	}
 
 	// If PAM is enabled, open a PAM context. This has to be done before anything
@@ -253,12 +249,7 @@ func RunCommand() (io.Writer, int, error) {
 
 	uaccErr := endUaccSession(ttyName)
 	if uaccErr != nil && !trace.IsAccessDenied(uaccErr) {
-			return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(uaccErr)
-		}
-	}
-		if !trace.IsAccessDenied(err) {
-			return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(err)
-		}
+		return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(uaccErr)
 	}
 
 	return ioutil.Discard, exitCode(err), trace.Wrap(err)
