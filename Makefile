@@ -85,17 +85,10 @@ BPF_MESSAGE := "with BPF support"
 endif
 endif
 
-# Integration tests requiring root are off by default.
-INTEGRATION_ROOT_MESSAGE := "without integration tests requiring root"
-ifneq ($(strip $(INTEGRATION_ROOT_ENABLED)),)
-INTEGRATION_ROOT_TAG := root_integration
-INTEGRATION_ROOT_MESSAGE := "with integration tests requiring root"
-endif
-
 # On Windows only build tsh. On all other platforms build teleport, tctl,
 # and tsh.
 BINARIES=$(BUILDDIR)/teleport $(BUILDDIR)/tctl $(BUILDDIR)/tsh
-RELEASE_MESSAGE := "Building with GOOS=$(OS) GOARCH=$(ARCH) and $(PAM_MESSAGE) and $(FIPS_MESSAGE) and $(BPF_MESSAGE) and $(INTEGRATION_ROOT_MESSAGE)."
+RELEASE_MESSAGE := "Building with GOOS=$(OS) GOARCH=$(ARCH) and $(PAM_MESSAGE) and $(FIPS_MESSAGE) and $(BPF_MESSAGE)."
 ifeq ("$(OS)","windows")
 BINARIES=$(BUILDDIR)/tsh
 endif
@@ -300,7 +293,7 @@ integration: FLAGS ?= -v -race
 integration: PACKAGES := $(shell go list ./... | grep integration)
 integration:
 	@echo KUBECONFIG is: $(KUBECONFIG), TEST_KUBE: $(TEST_KUBE)
-	go test -tags "$(PAM_TAG) $(FIPS_TAG) $(BPF_TAG) $(INTEGRATION_ROOT_TAG)" $(PACKAGES) $(FLAGS)
+	go test -tags "$(PAM_TAG) $(FIPS_TAG) $(BPF_TAG)" $(PACKAGES) $(FLAGS)
 
 #
 # Lint the Go code.
