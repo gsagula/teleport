@@ -29,7 +29,7 @@ int UACC_UTMP_READ_ERROR = 3;
 int UACC_UTMP_FAILED_OPEN = 4;
 
 // I opted to do things with setutent/pututline etc manually instead of using the login/logout BSD functions due to
-// running into some wierd behaviour. Upon asking on IRC I was told to avoid these with a 10 foot pole and stick to this.
+// running into some weird behaviour. Upon asking on IRC I was told to avoid these with a 10 foot pole and stick to this.
 
 // The max byte length of the C string representing the TTY name.
 static int max_len_tty_name() {

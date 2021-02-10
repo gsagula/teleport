@@ -169,7 +169,9 @@ func RunCommand() (io.Writer, int, error) {
 			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter("failed to resolve tty soft link: %v", err)
 		}
 		err := createUaccSession(ttyName, &c)
-		if err != nil {
+		if err != nil && !trace.IsAccessDenied(err) {
+			return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(err)
+		}
 			if !trace.IsAccessDenied(err) {
 				return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(err)
 			}
@@ -250,7 +252,10 @@ func RunCommand() (io.Writer, int, error) {
 	err = cmd.Wait()
 
 	uaccErr := endUaccSession(ttyName)
-	if uaccErr != nil {
+	if uaccErr != nil && !trace.IsAccessDenied(uaccErr) {
+			return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(uaccErr)
+		}
+	}
 		if !trace.IsAccessDenied(err) {
 			return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(err)
 		}
