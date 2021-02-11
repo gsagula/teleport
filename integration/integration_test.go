@@ -5116,11 +5116,3 @@ func canTestBPF() error {
 func dumpGoroutineProfile() {
 	pprof.Lookup("goroutine").WriteTo(os.Stderr, 2)
 }
-
-func TestNonRootUser(t *testing.T) {
-	rootUID := 0
-	actualUID := os.Geteuid()
-	if actualUID == rootUID {
-		t.Errorf("This test should not be running as root, but it is (UID: %v)", actualUID)
-	}
-}

@@ -22,11 +22,3 @@ import (
 	"os"
 	"testing"
 )
-
-func TestRootUser(t *testing.T) {
-	rootUID := 0
-	actualUID := os.Geteuid()
-	if actualUID != rootUID {
-		t.Errorf("This test should be running as root, but it is not (UID: %v)", actualUID)
-	}
-}
