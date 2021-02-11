@@ -21,11 +21,7 @@ package integration
 import (
 	"os"
 	"testing"
-
-	"gopkg.in/check.v1"
 )
-
-func TestIntegrationsRoot(t *testing.T) { check.TestingT(t) }
 
 func TestRootUser(t *testing.T) {
 	rootUID := 0
