@@ -20,8 +20,6 @@ package integration
 
 import (
 	"context"
-	"io/ioutil"
-	"os"
 	"testing"
 	"time"
 
@@ -120,9 +118,7 @@ const hostID = "00000000-0000-0000-0000-000000000000"
 
 func (s *SrvCtx) SetUpContext(t *testing.T) {
 	s.clock = clockwork.NewFakeClock()
-	tempdir, err := ioutil.TempDir("", "utmp-integration")
-	require.NoError(t, err)
-	defer os.RemoveAll(tempdir)
+	tempdir := t.TempDir()
 
 	authServer, err := auth.NewTestAuthServer(auth.TestAuthServerConfig{
 		ClusterName: "localhost",
@@ -155,9 +151,7 @@ func (s *SrvCtx) SetUpContext(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	nodeDir, err := ioutil.TempDir("", "utmp-integration")
-	require.NoError(t, err)
-	defer os.RemoveAll(tempdir)
+	nodeDir := t.TempDir()
 	srv, err := regular.New(
 		utils.NetAddr{AddrNetwork: "tcp", Addr: "127.0.0.1:0"},
 		s.server.ClusterName(),
