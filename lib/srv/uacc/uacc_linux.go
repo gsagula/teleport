@@ -27,8 +27,6 @@ package uacc
 import "C"
 
 import (
-	"encoding/binary"
-	"net"
 	"strings"
 	"sync"
 	"time"
@@ -50,13 +48,7 @@ const nameMaxLen = 255
 // `hostname`: Name of the system the user is logged into.
 // `remoteAddrV6`: IPv6 address of the remote host.
 // `ttyName`: Name of the TTY including the `/dev/` prefix.
-func Open(username, hostname string, remote net.IP, ttyName string) error {
-	rawV6 := remote.To16()
-	groupedV6 := [4]int32{}
-	for i := range groupedV6 {
-		groupedV6[i] = int32(binary.LittleEndian.Uint32(rawV6[i*4 : (i+1)*4]))
-	}
-
+func Open(username, hostname string, remote [4]int32, ttyName string) error {
 	// String parameter validation.
 	if len(username) > nameMaxLen {
 		return trace.BadParameter("username length exceeds OS limits")
@@ -81,7 +73,7 @@ func Open(username, hostname string, remote net.IP, ttyName string) error {
 	// Convert IPv6 array into C integer format.
 	cIP := [4]C.int{}
 	for i := 0; i < 4; i++ {
-		cIP[i] = (C.int)(groupedV6[i])
+		cIP[i] = (C.int)(remote[i])
 	}
 
 	timestamp := time.Now()

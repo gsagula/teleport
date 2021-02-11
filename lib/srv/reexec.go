@@ -96,28 +96,10 @@ type ExecCommand struct {
 	IsTestStub bool `json:"is_test_stub"`
 
 	// RemoteAddr is the address of the remote host.
-	RemoteAddr string `json:"remote_addr"`
+	RemoteAddr [4]int32 `json:"remote_addr"`
 
 	// The hostname of the node.
 	Hostname string `json:"hostname"`
-}
-
-func createUaccSession(ttyName string, c *ExecCommand) error {
-	remoteStringIP, _, _ := net.SplitHostPort(c.RemoteAddr)
-	remoteIP := net.ParseIP(remoteStringIP)
-	err := uacc.Open(c.Login, c.Hostname, remoteIP, ttyName)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func endUaccSession(ttyName string) error {
-	err := uacc.Close(ttyName)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // RunCommand reads in the command to run from the parent process (over a
@@ -168,7 +150,7 @@ func RunCommand() (io.Writer, int, error) {
 		if err != nil {
 			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter("failed to resolve tty soft link: %v", err)
 		}
-		err := createUaccSession(ttyName, &c)
+		err = uacc.Open(c.Login, c.Hostname, c.RemoteAddr, ttyName)
 		if err != nil && !trace.IsAccessDenied(err) {
 			return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(err)
 		}
@@ -247,7 +229,7 @@ func RunCommand() (io.Writer, int, error) {
 	// an exit code.
 	err = cmd.Wait()
 
-	uaccErr := endUaccSession(ttyName)
+	uaccErr := uacc.Close(ttyName)
 	if uaccErr != nil && !trace.IsAccessDenied(uaccErr) {
 		return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(uaccErr)
 	}
