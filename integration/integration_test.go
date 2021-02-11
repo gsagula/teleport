@@ -5121,12 +5121,3 @@ func canTestBPF() error {
 func dumpGoroutineProfile() {
 	pprof.Lookup("goroutine").WriteTo(os.Stderr, 2)
 }
-
-// TestRootUser is an example test which will only be run when running as root.
-// Used to validate Makefile/build logic.
-// All tests which must run as root need a name starting with "TestRoot".
-func TestRootUser(t *testing.T) {
-	if !isRoot() {
-		t.Skipf("skipping %v because tests are not running as root", t.Name())
-	}
-}
