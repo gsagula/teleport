@@ -18,6 +18,8 @@ package integration
 
 import (
 	"context"
+	"os"
+	"path"
 	"testing"
 	"time"
 
@@ -61,7 +63,7 @@ type SrvCtx struct {
 // TestRootUTMPEntryExists verifies that user accounting is done on supported systems.
 func TestRootUTMPEntryExists(t *testing.T) {
 	s := &SrvCtx{}
-	s.setUpContext(t)
+	utmpPath := s.setUpContext(t)
 	defer s.tearDownContext(t)
 	up, err := newUpack(s, teleportTestUser, []string{teleportTestUser}, wildcardAllow)
 	require.NoError(t, err)
@@ -84,7 +86,7 @@ func TestRootUTMPEntryExists(t *testing.T) {
 	defer se.Close()
 
 	require.NoError(t, se.RequestPty("xterm", 30, 30, ssh.TerminalModes{}), nil)
-	entryExists := uacc.UserWithPtyInDatabase(teleportTestUser)
+	entryExists := uacc.UserWithPtyInDatabase(&utmpPath, teleportTestUser)
 	require.NoError(t, entryExists)
 }
 
@@ -114,7 +116,16 @@ type upack struct {
 
 const hostID = "00000000-0000-0000-0000-000000000000"
 
-func (s *SrvCtx) setUpContext(t *testing.T) {
+func TouchFile(name string) error {
+	file, err := os.OpenFile(name, os.O_RDONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return err
+	}
+	return file.Close()
+}
+
+// This returns the utmp path.
+func (s *SrvCtx) setUpContext(t *testing.T) string {
 	s.clock = clockwork.NewFakeClock()
 	tempdir := t.TempDir()
 
@@ -149,6 +160,14 @@ func (s *SrvCtx) setUpContext(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	uaccDir := t.TempDir()
+	utmpPath := path.Join(uaccDir, "utmp")
+	wtmpPath := path.Join(uaccDir, "wtmp")
+	err = TouchFile(utmpPath)
+	require.NoError(t, err)
+	err = TouchFile(wtmpPath)
+	require.NoError(t, err)
+
 	nodeDir := t.TempDir()
 	srv, err := regular.New(
 		utils.NetAddr{AddrNetwork: "tcp", Addr: "127.0.0.1:0"},
@@ -174,11 +193,14 @@ func (s *SrvCtx) setUpContext(t *testing.T) {
 		),
 		regular.SetBPF(&bpf.NOP{}),
 		regular.SetClock(s.clock),
+		regular.SetUtmpPath(utmpPath),
+		regular.SetWtmpPath(wtmpPath),
 	)
 	require.NoError(t, err)
 	s.srv = srv
 	require.NoError(t, auth.CreateUploaderDir(nodeDir), IsNil)
 	require.NoError(t, s.srv.Start())
+	return utmpPath
 }
 
 func (s *SrvCtx) tearDownContext(t *testing.T) {
