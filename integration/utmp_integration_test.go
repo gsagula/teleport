@@ -60,8 +60,8 @@ type SrvCtx struct {
 	nodeID     string
 }
 
-// TestUTMPEntryExists verifies that user accounting is done on supported systems.
-func TestUTMPEntryExists(t *testing.T) {
+// TestRootUTMPEntryExists verifies that user accounting is done on supported systems.
+func TestRootUTMPEntryExists(t *testing.T) {
 	s := &SrvCtx{}
 	s.setUpContext(t)
 	defer s.tearDownContext(t)
