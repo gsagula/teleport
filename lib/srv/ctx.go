@@ -684,6 +684,31 @@ func (c *ServerContext) String() string {
 	return fmt.Sprintf("ServerContext(%v->%v, user=%v, id=%v)", c.ServerConn.RemoteAddr(), c.ServerConn.LocalAddr(), c.ServerConn.User(), c.id)
 }
 
+func (s *services.Server) GetInfo() services.Server {
+	// Only set the address for non-tunnel nodes.
+	var addr string
+	if !s.useTunnel {
+		addr = s.AdvertiseAddr()
+	}
+
+	return &services.ServerV2{
+		Kind:    services.KindNode,
+		Version: services.V2,
+		Metadata: services.Metadata{
+			Name:      s.ID(),
+			Namespace: s.getNamespace(),
+			Labels:    s.labels,
+		},
+		Spec: services.ServerSpecV2{
+			CmdLabels: s.getDynamicLabels(),
+			Addr:      addr,
+			Hostname:  s.hostname,
+			UseTunnel: s.useTunnel,
+			Version:   teleport.Version,
+		},
+	}
+}
+
 // ExecCommand takes a *ServerContext and extracts the parts needed to create
 // an *execCommand which can be re-sent to Teleport.
 func (c *ServerContext) ExecCommand() (*ExecCommand, error) {
@@ -723,18 +748,7 @@ func (c *ServerContext) ExecCommand() (*ExecCommand, error) {
 		requestType = c.request.Type
 	}
 
-	var hostname string
-	var err error
-	serverInfo := c.srv.GetInfo()
-	if serverInfo != nil {
-		hostname = serverInfo.GetHostname()
-	} else {
-		hostname, err = os.Hostname()
-		if err != nil {
-			return nil, trace.Wrap(err)
-		}
-	}
-
+	hostname := c.srv.GetInfo().GetHostname()
 	remoteAddr := c.ConnectionContext.ServerConn.Conn.RemoteAddr()
 	preparedAddr, err := uacc.PrepareAddr(remoteAddr)
 	if err != nil {
