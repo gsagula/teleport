@@ -145,9 +145,9 @@ func Close(ttyName string) error {
 }
 
 // UserWithPtyInDatabase checks the user accounting database for the existence of an USER_PROCESS entry with the given username.
-func UserWithPtyInDatabase(username string) (bool, error) {
+func UserWithPtyInDatabase(username string) error {
 	if len(username) > nameMaxLen {
-		return false, trace.BadParameter("username length exceeds OS limits")
+		return trace.BadParameter("username length exceeds OS limits")
 	}
 
 	// Convert Go strings into C strings that we can pass over ffi.
@@ -160,14 +160,14 @@ func UserWithPtyInDatabase(username string) (bool, error) {
 
 	switch status {
 	case C.UACC_UTMP_FAILED_OPEN:
-		return false, trace.AccessDenied("failed to open user account database")
+		return trace.AccessDenied("failed to open user account database")
 	case C.UACC_UTMP_ENTRY_DOES_NOT_EXIST:
-		return false, nil
+		return trace.NotFound("user not found")
 	default:
 		if status != 0 {
-			return false, trace.Errorf("unknown error with code %d", status)
+			return trace.Errorf("unknown error with code %d", status)
 		}
 
-		return true, nil
+		return nil
 	}
 }

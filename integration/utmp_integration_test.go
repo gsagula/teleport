@@ -85,9 +85,8 @@ func TestUTMPEntryExists(t *testing.T) {
 	defer se.Close()
 
 	require.NoError(t, se.RequestPty("xterm", 30, 30, ssh.TerminalModes{}), nil)
-	entryExists, err := uacc.UserWithPtyInDatabase(teleportTestUser)
+	entryExists := uacc.UserWithPtyInDatabase(teleportTestUser)
 	require.NoError(t, err)
-	require.Equal(t, entryExists, true)
 }
 
 // upack holds all ssh signing artefacts needed for signing and checking user keys
