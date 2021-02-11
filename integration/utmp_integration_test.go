@@ -60,11 +60,12 @@ type SrvCtx struct {
 	nodeID     string
 }
 
-// TestUTMP tests that user accounting is done on supported systems.
+// TestUTMPEntryExists verifies that user accounting is done on supported systems.
 func TestUTMPEntryExists(t *testing.T) {
 	s := &SrvCtx{}
-	s.SetUpContext(t)
-	up, err := s.newUpack(teleportTestUser, []string{teleportTestUser}, wildcardAllow)
+	s.setUpContext(t)
+	defer s.tearDownContext(t)
+	up, err := newUpack(s, teleportTestUser, []string{teleportTestUser}, wildcardAllow)
 	require.NoError(t, err)
 
 	sshConfig2 := &ssh.ClientConfig{
@@ -86,7 +87,7 @@ func TestUTMPEntryExists(t *testing.T) {
 
 	require.NoError(t, se.RequestPty("xterm", 30, 30, ssh.TerminalModes{}), nil)
 	entryExists := uacc.UserWithPtyInDatabase(teleportTestUser)
-	require.NoError(t, err)
+	require.NoError(t, entryExists)
 }
 
 // upack holds all ssh signing artefacts needed for signing and checking user keys
@@ -102,7 +103,7 @@ type upack struct {
 
 	// cert is a certificate signed by user CA
 	cert []byte
-	// pcert is a parsed ssh Certificae
+	// pcert is a parsed SSH Certificae
 	pcert *ssh.Certificate
 
 	// signer is a signer that answers signing challenges using private key
@@ -115,7 +116,7 @@ type upack struct {
 
 const hostID = "00000000-0000-0000-0000-000000000000"
 
-func (s *SrvCtx) SetUpContext(t *testing.T) {
+func (s *SrvCtx) setUpContext(t *testing.T) {
 	s.clock = clockwork.NewFakeClock()
 	tempdir := t.TempDir()
 
@@ -182,7 +183,16 @@ func (s *SrvCtx) SetUpContext(t *testing.T) {
 	require.NoError(t, s.srv.Start())
 }
 
-func (s *SrvCtx) newUpack(username string, allowedLogins []string, allowedLabels services.Labels) (*upack, error) {
+func (s *SrvCtx) tearDownContext(t *testing.T) {
+	if s.server != nil {
+		require.NoError(t, s.server.Close())
+	}
+	if s.srv != nil {
+		require.NoError(t, s.srv.Close())
+	}
+}
+
+func newUpack(s *SrvCtx, username string, allowedLogins []string, allowedLabels services.Labels) (*upack, error) {
 	ctx := context.Background()
 	auth := s.server.Auth()
 	upriv, upub, err := auth.GenerateKeyPair("")

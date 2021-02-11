@@ -105,23 +105,16 @@ static int uacc_has_entry_with_user(const char *user) {
     if (errno != 0) {
         return UACC_UTMP_FAILED_OPEN;
     }
-    bool exists = false;
-    while (true) {
-        struct utmp *entry = getutent();
-        if (entry == NULL) {
-            break;
+    struct utmp *entry = getutent();
+    while (entry != NULL) {
+        if (entry->ut_type == USER_PROCESS && strncmp(user, entry->ut_user, UT_NAMESIZE)) {
+	        endutent();
+	        return 0;
         }
-        if (entry->ut_type == USER_PROCESS && strncmp(user, entry->ut_user, 32)) {
-            exists = true;
-            break;
-        }
+	    entry = getutent();
     }
     endutent();
-    if (exists) {
-        return 0;
-    } else {
-        return errno == 0 ? UACC_UTMP_ENTRY_DOES_NOT_EXIST : errno;
-    }
+    return errno == 0 ? UACC_UTMP_ENTRY_DOES_NOT_EXIST : errno;
 }
 
 #endif
