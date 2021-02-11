@@ -30,8 +30,11 @@ int UACC_UTMP_READ_ERROR = 3;
 int UACC_UTMP_FAILED_OPEN = 4;
 int UACC_UTMP_ENTRY_DOES_NOT_EXIST = 5;
 
-// I opted to do things with setutent/pututline etc manually instead of using the login/logout BSD functions due to
-// running into some weird behaviour. Upon asking on IRC I was told to avoid these with a 10 foot pole and stick to this.
+// I initially attempted to use the login/logout BSD functions but ran into a string of unexpected behaviours such as
+// errno being set to undocument values along with wierd return values in certain cases. They also modify the utmp database
+// in a way we don't want. We want to insert a USER_PROCESS entry directly before we do PAM/cgroup setup and launch the shell
+// without any middleman. I brought this information with my issues and requirements to the IRC and was told that I would be
+// better off using the setutent/pututline low level manipulation functions - joel.
 
 // The max byte length of the C string representing the TTY name.
 static int max_len_tty_name() {
