@@ -412,6 +412,16 @@ func (s *Server) GetClock() clockwork.Clock {
 	return s.clock
 }
 
+// GetUtmpPath returns the optional override of the utmp path.
+func (s *Server) GetUtmpPath() *string {
+	return nil
+}
+
+// GetWtmpPath returns the optional override of the wtmp path.
+func (s *Server) GetWtmpPath() *string {
+	return nil
+}
+
 func (s *Server) Serve() {
 	config := &ssh.ServerConfig{}
 

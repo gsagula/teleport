@@ -48,7 +48,7 @@ const nameMaxLen = 255
 // `hostname`: Name of the system the user is logged into.
 // `remoteAddrV6`: IPv6 address of the remote host.
 // `ttyName`: Name of the TTY including the `/dev/` prefix.
-func Open(username, hostname string, remote [4]int32, ttyName string) error {
+func Open(utmpPath, wtmpPath *string, username, hostname string, remote [4]int32, ttyName string) error {
 	// String parameter validation.
 	if len(username) > nameMaxLen {
 		return trace.BadParameter("username length exceeds OS limits")
@@ -61,6 +61,16 @@ func Open(username, hostname string, remote [4]int32, ttyName string) error {
 	}
 
 	// Convert Go strings into C strings that we can pass over ffi.
+	var cUtmpPath *C.char = nil
+	var cWtmpPath *C.char = nil
+	if utmpPath != nil {
+		cUtmpPath = C.CString(*utmpPath)
+		defer C.free(unsafe.Pointer(cUtmpPath))
+	}
+	if wtmpPath != nil {
+		cWtmpPath = C.CString(*wtmpPath)
+		defer C.free(unsafe.Pointer(cWtmpPath))
+	}
 	cUsername := C.CString(username)
 	defer C.free(unsafe.Pointer(cUsername))
 	cHostname := C.CString(hostname)
@@ -81,7 +91,7 @@ func Open(username, hostname string, remote [4]int32, ttyName string) error {
 	microsFraction := (C.int32_t)((timestamp.UnixNano() % int64(time.Second)) / int64(time.Microsecond))
 
 	accountDb.Lock()
-	status := C.uacc_add_utmp_entry(cUsername, cHostname, &cIP[0], cTtyName, cIDName, secondsElapsed, microsFraction)
+	status := C.uacc_add_utmp_entry(cUtmpPath, cWtmpPath, cUsername, cHostname, &cIP[0], cTtyName, cIDName, secondsElapsed, microsFraction)
 	accountDb.Unlock()
 
 	switch status {
@@ -91,6 +101,8 @@ func Open(username, hostname string, remote [4]int32, ttyName string) error {
 		return trace.AccessDenied("failed to add entry to utmp database")
 	case C.UACC_UTMP_FAILED_OPEN:
 		return trace.AccessDenied("failed to open user account database")
+	case C.UACC_UTMP_FAILED_TO_SELECT_FILE:
+		return trace.BadParameter("failed to select file")
 	default:
 		if status != 0 {
 			return trace.Errorf("unknown error with code %d", status)
@@ -104,18 +116,28 @@ func Open(username, hostname string, remote [4]int32, ttyName string) error {
 // This should be called when an interactive session exits.
 //
 // The `ttyName` parameter must be the name of the TTY including the `/dev/` prefix.
-func Close(ttyName string) error {
+func Close(utmpPath, wtmpPath *string, ttyName string) error {
 	// String parameter validation.
 	if len(ttyName) > (int)(C.max_len_tty_name()-1) {
 		return trace.BadParameter("tty name length exceeds OS limits")
 	}
 
 	// Convert Go strings into C strings that we can pass over ffi.
+	var cUtmpPath *C.char = nil
+	var cWtmpPath *C.char = nil
+	if utmpPath != nil {
+		cUtmpPath = C.CString(*utmpPath)
+		defer C.free(unsafe.Pointer(cUtmpPath))
+	}
+	if wtmpPath != nil {
+		cWtmpPath = C.CString(*wtmpPath)
+		defer C.free(unsafe.Pointer(cWtmpPath))
+	}
 	cTtyName := C.CString(strings.TrimPrefix(ttyName, "/dev/"))
 	defer C.free(unsafe.Pointer(cTtyName))
 
 	accountDb.Lock()
-	status := C.uacc_mark_utmp_entry_dead(cTtyName)
+	status := C.uacc_mark_utmp_entry_dead(cUtmpPath, cWtmpPath, cTtyName)
 	accountDb.Unlock()
 
 	switch status {
@@ -127,6 +149,8 @@ func Close(ttyName string) error {
 		return trace.AccessDenied("failed to read and search utmp database")
 	case C.UACC_UTMP_FAILED_OPEN:
 		return trace.AccessDenied("failed to open user account database")
+	case C.UACC_UTMP_FAILED_TO_SELECT_FILE:
+		return trace.BadParameter("failed to select file")
 	default:
 		if status != 0 {
 			return trace.Errorf("unknown error with code %d", status)
@@ -137,17 +161,22 @@ func Close(ttyName string) error {
 }
 
 // UserWithPtyInDatabase checks the user accounting database for the existence of an USER_PROCESS entry with the given username.
-func UserWithPtyInDatabase(username string) error {
+func UserWithPtyInDatabase(utmpPath *string, username string) error {
 	if len(username) > nameMaxLen {
 		return trace.BadParameter("username length exceeds OS limits")
 	}
 
 	// Convert Go strings into C strings that we can pass over ffi.
+	var cUtmpPath *C.char = nil
+	if utmpPath != nil {
+		cUtmpPath = C.CString(*utmpPath)
+		defer C.free(unsafe.Pointer(cUtmpPath))
+	}
 	cUsername := C.CString(username)
 	defer C.free(unsafe.Pointer(cUsername))
 
 	accountDb.Lock()
-	status := C.uacc_has_entry_with_user(cUsername)
+	status := C.uacc_has_entry_with_user(cUtmpPath, cUsername)
 	accountDb.Unlock()
 
 	switch status {
@@ -155,6 +184,8 @@ func UserWithPtyInDatabase(username string) error {
 		return trace.AccessDenied("failed to open user account database")
 	case C.UACC_UTMP_ENTRY_DOES_NOT_EXIST:
 		return trace.NotFound("user not found")
+	case C.UACC_UTMP_FAILED_TO_SELECT_FILE:
+		return trace.BadParameter("failed to select file")
 	default:
 		if status != 0 {
 			return trace.Errorf("unknown error with code %d", status)

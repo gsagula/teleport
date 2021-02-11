@@ -121,6 +121,12 @@ type Server interface {
 
 	// Context returns server shutdown context
 	Context() context.Context
+
+	// GetUtmpPath returns the path of the user accounting database. If nil is returned the path used is the system default.
+	GetUtmpPath() *string
+
+	// GetWtmpPath returns the path of the user accounting log. If nil is returned the path used is the system default.
+	GetWtmpPath() *string
 }
 
 // IdentityContext holds all identity information associated with the user
@@ -747,6 +753,8 @@ func (c *ServerContext) ExecCommand() (*ExecCommand, error) {
 		IsTestStub:            c.IsTestStub,
 		RemoteAddr:            preparedAddr,
 		Hostname:              hostname,
+		UtmpPath:              c.srv.GetUtmpPath(),
+		WtmpPath:              c.srv.GetWtmpPath(),
 	}, nil
 }
 

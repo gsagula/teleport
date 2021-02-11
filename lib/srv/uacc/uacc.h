@@ -24,11 +24,15 @@ limitations under the License.
 #include <errno.h>
 #include <stdbool.h>
 
+#define SELECT_UTMP_PATH(x) x != NULL ? x : _PATH_UTMP
+#define SELECT_WTMP_PATH(x) x != NULL ? x : _PATH_WTMP
+
 int UACC_UTMP_MISSING_PERMISSIONS = 1;
 int UACC_UTMP_WRITE_ERROR = 2;
 int UACC_UTMP_READ_ERROR = 3;
 int UACC_UTMP_FAILED_OPEN = 4;
 int UACC_UTMP_ENTRY_DOES_NOT_EXIST = 5;
+int UACC_UTMP_FAILED_TO_SELECT_FILE = 6;
 
 // I initially attempted to use the login/logout BSD functions but ran into a string of unexpected behaviours such as
 // errno being set to undocument values along with wierd return values in certain cases. They also modify the utmp database
@@ -43,7 +47,10 @@ static int max_len_tty_name() {
 
 // Low level C function to add a new USER_PROCESS entry to the database.
 // This function does not perform any argument validation.
-static int uacc_add_utmp_entry(const char *username, const char *hostname, const int32_t remote_addr_v6[4], const char *tty_name, const char *id, int32_t tv_sec, int32_t tv_usec) {
+static int uacc_add_utmp_entry(const char *utmp_path, const char *wtmp_path, const char *username, const char *hostname, const int32_t remote_addr_v6[4], const char *tty_name, const char *id, int32_t tv_sec, int32_t tv_usec) {
+    if (utmpname(SELECT_UTMP_PATH(utmp_path)) != 0) {
+        return UACC_UTMP_FAILED_TO_SELECT_FILE;
+    }
     struct utmp entry;
     entry.ut_type = USER_PROCESS;
     strncpy((char*) &entry.ut_line, tty_name, UT_LINESIZE);
@@ -65,13 +72,16 @@ static int uacc_add_utmp_entry(const char *username, const char *hostname, const
         return errno == EPERM || errno == EACCES ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }
     endutent();
-    updwtmp(_PATH_WTMP, &entry);
+    updwtmp(SELECT_WTMP_PATH(wtmp_path), &entry);
     return 0;
 }
 
 // Low level C function to mark a database entry as DEAD_PROCESS.
 // This function does not perform string argument validation.
-static int uacc_mark_utmp_entry_dead(const char *tty_name) {
+static int uacc_mark_utmp_entry_dead(const char *utmp_path, const char *wtmp_path, const char *tty_name) {
+    if (utmpname(SELECT_UTMP_PATH(utmp_path)) != 0) {
+        return UACC_UTMP_FAILED_TO_SELECT_FILE;
+    }
     errno = 0;
     setutent();
     if (errno != 0) {
@@ -96,13 +106,16 @@ static int uacc_mark_utmp_entry_dead(const char *tty_name) {
         return errno == EPERM || errno == EACCES ? UACC_UTMP_MISSING_PERMISSIONS : UACC_UTMP_WRITE_ERROR;
     }
     endutent();
-    updwtmp(_PATH_WTMP, &entry);
+    updwtmp(SELECT_WTMP_PATH(wtmp_path), &entry);
     return 0;
 }
 
 // Low level C function to check the database for an entry for a given user.
 // This function does not perform string argument validation.
-static int uacc_has_entry_with_user(const char *user) {
+static int uacc_has_entry_with_user(const char *utmp_path, const char *user) {
+    if (utmpname(SELECT_UTMP_PATH(utmp_path)) != 0) {
+        return UACC_UTMP_FAILED_TO_SELECT_FILE;
+    }
     errno = 0;
     setutent();
     if (errno != 0) {

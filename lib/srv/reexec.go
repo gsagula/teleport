@@ -100,6 +100,12 @@ type ExecCommand struct {
 
 	// The hostname of the node.
 	Hostname string `json:"hostname"`
+
+	// The path of the system utmp database.
+	UtmpPath *string `json:"utmp_path"`
+
+	// The path of the system wtmp log.
+	WtmpPath *string `json:"wtmp_path"`
 }
 
 // RunCommand reads in the command to run from the parent process (over a
@@ -150,7 +156,7 @@ func RunCommand() (io.Writer, int, error) {
 		if err != nil {
 			return errorWriter, teleport.RemoteCommandFailure, trace.BadParameter("failed to resolve tty soft link: %v", err)
 		}
-		err = uacc.Open(c.Login, c.Hostname, c.RemoteAddr, ttyName)
+		err = uacc.Open(c.UtmpPath, c.WtmpPath, c.Login, c.Hostname, c.RemoteAddr, ttyName)
 		if err != nil && !trace.IsAccessDenied(err) {
 			return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(err)
 		}
@@ -229,7 +235,7 @@ func RunCommand() (io.Writer, int, error) {
 	// an exit code.
 	err = cmd.Wait()
 
-	uaccErr := uacc.Close(ttyName)
+	uaccErr := uacc.Close(c.UtmpPath, c.WtmpPath, ttyName)
 	if uaccErr != nil && !trace.IsAccessDenied(uaccErr) {
 		return errorWriter, teleport.RemoteCommandFailure, trace.Wrap(uaccErr)
 	}
