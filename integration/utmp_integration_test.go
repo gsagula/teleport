@@ -102,7 +102,7 @@ type upack struct {
 	// pub is a public user key
 	pub []byte
 
-	//cert is a certificate signed by user CA
+	// cert is a certificate signed by user CA
 	cert []byte
 	// pcert is a parsed ssh Certificae
 	pcert *ssh.Certificate
